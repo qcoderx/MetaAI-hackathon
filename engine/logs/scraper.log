@@ -1,0 +1,83 @@
+2025-12-09 23:47:56,619 - engine.scraper - INFO - 📊 ScraperManager initialized with 3 scrapers
+2025-12-09 23:47:57,382 - engine.scheduler - INFO - ⏰ TaskScheduler initialized
+2025-12-09 23:47:57,382 - engine.scraper - INFO - 📊 ScraperManager initialized with 3 scrapers
+2025-12-09 23:47:57,384 - engine.scraper - INFO - 🎯 Starting scrape for: iPhone
+2025-12-09 23:47:57,384 - engine.scraper - INFO - 🛍️  Searching Jumia: iPhone
+2025-12-09 23:48:02,628 - engine.scraper - INFO - 📦 Found 3 products on Jumia
+2025-12-09 23:48:02,633 - engine.scraper - INFO - ✅ Jumia: Parsed 3 products
+2025-12-09 23:48:02,634 - engine.scraper - INFO - 🛍️  Searching Jiji: iPhone
+2025-12-09 23:48:07,502 - engine.scraper - WARNING - Jiji blocked, using mock data
+2025-12-09 23:48:07,502 - engine.scraper - INFO - 📦 Jiji: Generated 3 mock items
+2025-12-09 23:48:07,503 - engine.scraper - INFO - 🛍️  Searching Konga: iPhone
+2025-12-09 23:48:12,689 - engine.scraper - WARNING - No products found on Konga
+2025-12-09 23:48:12,689 - engine.scraper - INFO - 📈 Total items scraped: 6
+2025-12-09 23:48:12,689 - engine.scraper - INFO - ✅ JUMIA: 3 items
+2025-12-09 23:48:12,689 - engine.scraper - INFO - ✅ JIJI: 3 items
+2025-12-09 23:48:12,690 - engine.scraper - INFO - 💾 Saved results to engine/data/iPhone_20251209_234812.json
+2025-12-09 23:48:12,724 - engine.scraper - INFO - 🎯 Starting scrape for: power bank
+2025-12-09 23:48:12,725 - engine.scraper - INFO - 🛍️  Searching Jumia: power bank
+2025-12-09 23:48:16,745 - engine.scraper - INFO - 📦 Found 3 products on Jumia
+2025-12-09 23:48:16,748 - engine.scraper - INFO - ✅ Jumia: Parsed 3 products
+2025-12-09 23:48:16,748 - engine.scraper - INFO - 🛍️  Searching Jiji: power bank
+2025-12-09 23:48:21,633 - engine.scraper - WARNING - Jiji blocked, using mock data
+2025-12-09 23:48:21,634 - engine.scraper - INFO - 📦 Jiji: Generated 3 mock items
+2025-12-09 23:48:21,634 - engine.scraper - INFO - 🛍️  Searching Konga: power bank
+2025-12-09 23:48:26,731 - engine.scraper - WARNING - No products found on Konga
+2025-12-09 23:48:26,732 - engine.scraper - INFO - 📈 Total items scraped: 6
+2025-12-09 23:48:26,732 - engine.scraper - INFO - ✅ JUMIA: 3 items
+2025-12-09 23:48:26,732 - engine.scraper - INFO - ✅ JIJI: 3 items
+2025-12-09 23:48:26,733 - engine.scraper - INFO - 💾 Saved results to engine/data/power_bank_20251209_234826.json
+2025-12-09 23:48:26,769 - engine.scraper - INFO - 📊 ScraperManager initialized with 3 scrapers
+2025-12-09 23:48:26,772 - engine.scheduler - INFO - ⏰ TaskScheduler initialized
+2025-12-09 23:48:26,772 - engine.scheduler - INFO - 🔄 Scraping 5 products...
+2025-12-09 23:48:26,772 - engine.scheduler - INFO - 🔍 Scraping: iPhone
+2025-12-09 23:48:26,773 - engine.scraper - INFO - 🎯 Starting scrape for: iPhone
+2025-12-09 23:48:26,773 - engine.scraper - INFO - 🛍️  Searching Jumia: iPhone
+2025-12-09 23:48:30,910 - engine.scraper - INFO - 📦 Found 5 products on Jumia
+2025-12-09 23:48:30,916 - engine.scraper - INFO - ✅ Jumia: Parsed 5 products
+2025-12-09 23:48:30,916 - engine.scraper - INFO - 🛍️  Searching Jiji: iPhone
+2025-12-09 23:48:34,906 - engine.scraper - WARNING - Jiji blocked, using mock data
+2025-12-09 23:48:34,908 - engine.scraper - INFO - 📦 Jiji: Generated 5 mock items
+2025-12-09 23:48:34,909 - engine.scraper - INFO - 🛍️  Searching Konga: iPhone
+2025-12-09 23:48:40,914 - engine.scraper - WARNING - No products found on Konga
+2025-12-09 23:48:40,914 - engine.scraper - INFO - 📈 Total items scraped: 10
+2025-12-09 23:48:40,914 - engine.scraper - INFO - ✅ JUMIA: 5 items
+2025-12-09 23:48:40,914 - engine.scraper - INFO - ✅ JIJI: 5 items
+2025-12-09 23:48:40,915 - engine.scraper - INFO - 💾 Saved results to engine/data/iPhone_20251209_234840.json
+2025-12-09 23:48:40,944 - engine.scheduler - INFO - ✅ iPhone: 10 items
+2025-12-09 23:48:42,948 - engine.scheduler - INFO - 🔍 Scraping: power bank
+2025-12-09 23:48:42,948 - engine.scraper - INFO - 🎯 Starting scrape for: power bank
+2025-12-09 23:48:42,949 - engine.scraper - INFO - 🛍️  Searching Jumia: power bank
+2025-12-09 23:48:46,761 - engine.scraper - INFO - 📦 Found 5 products on Jumia
+2025-12-09 23:48:46,768 - engine.scraper - INFO - ✅ Jumia: Parsed 5 products
+2025-12-09 23:48:46,769 - engine.scraper - INFO - 🛍️  Searching Jiji: power bank
+2025-12-09 23:48:50,332 - engine.scraper - WARNING - Jiji blocked, using mock data
+2025-12-09 23:48:50,333 - engine.scraper - INFO - 📦 Jiji: Generated 5 mock items
+2025-12-09 23:48:50,333 - engine.scraper - INFO - 🛍️  Searching Konga: power bank
+2025-12-09 23:48:57,176 - engine.scraper - WARNING - No products found on Konga
+2025-12-09 23:48:57,176 - engine.scraper - INFO - 📈 Total items scraped: 10
+2025-12-09 23:48:57,176 - engine.scraper - INFO - ✅ JUMIA: 5 items
+2025-12-09 23:48:57,176 - engine.scraper - INFO - ✅ JIJI: 5 items
+2025-12-09 23:48:57,179 - engine.scraper - INFO - 💾 Saved results to engine/data/power_bank_20251209_234857.json
+2025-12-09 23:48:57,209 - engine.scheduler - INFO - ✅ power bank: 10 items
+2025-12-09 23:48:59,210 - engine.scheduler - INFO - 🔍 Scraping: laptop
+2025-12-09 23:48:59,210 - engine.scraper - INFO - 🎯 Starting scrape for: laptop
+2025-12-09 23:48:59,212 - engine.scraper - INFO - 🛍️  Searching Jumia: laptop
+2025-12-09 23:49:02,411 - engine.scraper - INFO - 📦 Found 5 products on Jumia
+2025-12-09 23:49:02,416 - engine.scraper - INFO - ✅ Jumia: Parsed 5 products
+2025-12-09 23:49:02,417 - engine.scraper - INFO - 🛍️  Searching Jiji: laptop
+2025-12-09 23:49:06,815 - engine.scraper - WARNING - Jiji blocked, using mock data
+2025-12-09 23:49:06,816 - engine.scraper - INFO - 📦 Jiji: Generated 5 mock items
+2025-12-09 23:49:06,816 - engine.scraper - INFO - 🛍️  Searching Konga: laptop
+2025-12-09 23:53:31,900 - engine.scraper - INFO - 🛍️  Searching Konga: iPhone
+2025-12-09 23:53:31,901 - engine.scraper - INFO - 🌐 Fetching: https://www.konga.com/search?search=iPhone
+2025-12-09 23:53:39,963 - engine.scraper - WARNING - ❌ Konga: No products found with selectors
+2025-12-09 23:53:43,782 - engine.scraper - INFO - 🛍️  Searching Jiji: iPhone
+2025-12-09 23:53:57,107 - engine.scraper - WARNING - Jiji blocked on all strategies, using mock data
+2025-12-09 23:53:57,107 - engine.scraper - INFO - 📦 Jiji: Generating smart mock data for iPhone
+2025-12-09 23:53:57,108 - engine.scraper - INFO - 🛍️  Searching Jumia: iPhone
+2025-12-09 23:54:01,591 - engine.scraper - INFO - 📦 Found 3 products on Jumia
+2025-12-09 23:54:01,594 - engine.scraper - INFO - ✅ Jumia: Parsed 3 products
+2025-12-09 23:54:01,599 - engine.scraper - INFO - 🛍️  Searching Jumia: iPhone
+2025-12-09 23:54:06,461 - engine.scraper - INFO - 📦 Found 3 products on Jumia
+2025-12-09 23:54:06,464 - engine.scraper - INFO - ✅ Jumia: Parsed 3 products

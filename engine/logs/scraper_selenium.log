@@ -1,0 +1,331 @@
+2025-12-10 00:07:06,793 - WDM - INFO - ====== WebDriver manager ======
+2025-12-10 00:07:09,384 - WDM - INFO - Get LATEST chromedriver version for google-chrome
+2025-12-10 00:07:11,102 - WDM - INFO - Get LATEST chromedriver version for google-chrome
+2025-12-10 00:07:11,720 - WDM - INFO - There is no [mac64] chromedriver "128.0.6613.137" for browser google-chrome "128.0.6613" in cache
+2025-12-10 00:07:11,768 - WDM - INFO - Get LATEST chromedriver version for google-chrome
+2025-12-10 00:07:13,800 - WDM - INFO - WebDriver version 128.0.6613.137 selected
+2025-12-10 00:07:13,812 - WDM - INFO - Modern chrome version https://storage.googleapis.com/chrome-for-testing-public/128.0.6613.137/mac-x64/chromedriver-mac-x64.zip
+2025-12-10 00:07:13,813 - WDM - INFO - About to download new driver from https://storage.googleapis.com/chrome-for-testing-public/128.0.6613.137/mac-x64/chromedriver-mac-x64.zip
+2025-12-10 00:07:14,455 - WDM - INFO - Driver downloading response is 200
+2025-12-10 00:07:19,470 - WDM - INFO - Get LATEST chromedriver version for google-chrome
+2025-12-10 00:07:25,434 - WDM - INFO - Driver has been saved in cache [/Users/koded/.wdm/drivers/chromedriver/mac64/128.0.6613.137]
+2025-12-10 00:07:28,772 - engine.scraper_v2 - INFO - ✅ Selenium driver initialized
+2025-12-10 00:07:28,772 - engine.scraper_v2 - INFO - ✅ Jiji Selenium scraper initialized
+2025-12-10 00:07:28,773 - WDM - INFO - ====== WebDriver manager ======
+2025-12-10 00:07:29,052 - WDM - INFO - Get LATEST chromedriver version for google-chrome
+2025-12-10 00:07:29,703 - WDM - INFO - Get LATEST chromedriver version for google-chrome
+2025-12-10 00:07:31,854 - WDM - INFO - Driver [/Users/koded/.wdm/drivers/chromedriver/mac64/128.0.6613.137/chromedriver-mac-x64/chromedriver] found in cache
+2025-12-10 00:07:48,111 - engine.scraper_v2 - INFO - ✅ Selenium driver initialized
+2025-12-10 00:07:48,114 - engine.scraper_v2 - INFO - ✅ Konga Selenium scraper initialized
+2025-12-10 00:07:48,116 - engine.scraper_v2 - INFO - 🚀 Enhanced ScraperManager initialized
+2025-12-10 00:07:48,117 - engine.scraper_v2 - INFO - 🎯 Starting ENHANCED scrape for: iPhone 13
+2025-12-10 00:07:48,117 - engine.scraper_v2 - INFO - 🛍️  Searching Jumia: iPhone 13
+2025-12-10 00:07:53,657 - engine.scraper_v2 - INFO - 📦 Found 5 products on Jumia
+2025-12-10 00:07:53,833 - engine.scraper_v2 - INFO - ✅ Jumia: Parsed 5 products
+2025-12-10 00:07:53,833 - engine.scraper_v2 - INFO - 🔍 Searching Jiji (Selenium) for: iPhone 13
+2025-12-10 00:07:53,833 - engine.scraper_v2 - INFO - 🌐 Navigating to: https://jiji.ng/search?query=iPhone+13
+2025-12-10 00:08:06,849 - engine.scraper_v2 - WARNING - 🛡️ CAPTCHA detected on Jiji
+2025-12-10 00:08:06,849 - engine.scraper_v2 - INFO - 🔄 Please solve CAPTCHA manually in the browser window...
+2025-12-10 00:08:36,032 - engine.scraper_v2 - INFO - Found 80 total listings
+2025-12-10 00:08:41,155 - engine.scraper_v2 - INFO - 🎉 Jiji Selenium: Successfully parsed 5 listings
+2025-12-10 00:08:41,155 - engine.scraper_v2 - INFO - 🔍 Searching Konga (Selenium) for: iPhone 13
+2025-12-10 00:08:41,156 - engine.scraper_v2 - INFO - 🌐 Navigating to: https://www.konga.com/search?search=iPhone%2013
+2025-12-10 00:09:51,344 - engine.scraper_v2 - WARNING - Products not found with standard selectors
+2025-12-10 00:09:52,073 - engine.scraper_v2 - INFO - ✅ Konga Selenium: Found 5 product links
+2025-12-10 00:09:52,073 - engine.scraper_v2 - INFO - 📦 Konga Selenium: Parsing 5 products
+2025-12-10 00:09:55,494 - engine.scraper_v2 - INFO - ✅ Konga Selenium: Successfully parsed 0 products
+2025-12-10 00:09:55,495 - engine.scraper_v2 - INFO - 📈 Total items scraped: 10
+2025-12-10 00:09:55,495 - engine.scraper_v2 - INFO - ✅ JUMIA: 5 items
+2025-12-10 00:09:55,495 - engine.scraper_v2 - INFO - ✅ JIJI (Selenium): 5 items
+2025-12-10 00:09:55,496 - engine.scraper_v2 - INFO - ✅ KONGA: 0 items
+2025-12-10 00:09:55,499 - engine.scraper_v2 - INFO - 💾 Saved results to engine/data/iPhone_13_SELENIUM_20251210_000955.json
+2025-12-10 00:09:55,771 - engine.scraper_v2 - INFO - ✅ Selenium driver closed
+2025-12-10 00:09:56,168 - engine.scraper_v2 - INFO - ✅ Selenium driver closed
+2025-12-10 00:09:56,168 - engine.scraper_v2 - INFO - ✅ All Selenium drivers closed
+2025-12-10 00:09:56,229 - urllib3.connectionpool - WARNING - Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<urllib3.connection.HTTPConnection object at 0x106690fa0>: Failed to establish a new connection: [Errno 61] Connection refused')': /session/785bde7b5a64296b9b0459dc0d6ad1b8
+2025-12-10 00:09:56,231 - urllib3.connectionpool - WARNING - Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<urllib3.connection.HTTPConnection object at 0x106655d90>: Failed to establish a new connection: [Errno 61] Connection refused')': /session/785bde7b5a64296b9b0459dc0d6ad1b8
+2025-12-10 00:09:56,235 - urllib3.connectionpool - WARNING - Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<urllib3.connection.HTTPConnection object at 0x1064f7640>: Failed to establish a new connection: [Errno 61] Connection refused')': /session/785bde7b5a64296b9b0459dc0d6ad1b8
+2025-12-10 00:09:56,238 - engine.scraper_v2 - INFO - ✅ Selenium driver closed
+2025-12-10 00:09:56,243 - urllib3.connectionpool - WARNING - Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<urllib3.connection.HTTPConnection object at 0x105c8bd00>: Failed to establish a new connection: [Errno 61] Connection refused')': /session/c135123d9884162a71b5c55c41c22a5b
+2025-12-10 00:09:56,250 - urllib3.connectionpool - WARNING - Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<urllib3.connection.HTTPConnection object at 0x105aa8b20>: Failed to establish a new connection: [Errno 61] Connection refused')': /session/c135123d9884162a71b5c55c41c22a5b
+2025-12-10 00:09:56,252 - urllib3.connectionpool - WARNING - Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<urllib3.connection.HTTPConnection object at 0x105650d30>: Failed to establish a new connection: [Errno 61] Connection refused')': /session/c135123d9884162a71b5c55c41c22a5b
+2025-12-10 00:09:56,256 - engine.scraper_v2 - INFO - ✅ Selenium driver closed
+2025-12-10 00:19:54,752 - WDM - INFO - ====== WebDriver manager ======
+2025-12-10 00:19:56,006 - WDM - INFO - Get LATEST chromedriver version for google-chrome
+2025-12-10 00:19:57,031 - WDM - INFO - Get LATEST chromedriver version for google-chrome
+2025-12-10 00:19:57,669 - WDM - INFO - Driver [/Users/koded/.wdm/drivers/chromedriver/mac64/128.0.6613.137/chromedriver-mac-x64/chromedriver] found in cache
+2025-12-10 00:19:59,046 - engine.scraper_v2 - INFO - ✅ Selenium driver initialized
+2025-12-10 00:19:59,047 - engine.scraper_v2 - INFO - ✅ Jiji Selenium initialized (headless)
+2025-12-10 00:19:59,047 - WDM - INFO - ====== WebDriver manager ======
+2025-12-10 00:19:59,312 - WDM - INFO - Get LATEST chromedriver version for google-chrome
+2025-12-10 00:20:00,025 - WDM - INFO - Get LATEST chromedriver version for google-chrome
+2025-12-10 00:20:00,952 - WDM - INFO - Driver [/Users/koded/.wdm/drivers/chromedriver/mac64/128.0.6613.137/chromedriver-mac-x64/chromedriver] found in cache
+2025-12-10 00:20:03,268 - engine.scraper_v2 - INFO - ✅ Selenium driver initialized
+2025-12-10 00:20:03,269 - engine.scraper_v2 - INFO - ✅ Konga Selenium initialized (headless)
+2025-12-10 00:20:03,492 - engine.scraper_v2 - INFO - ✅ Selenium driver closed
+2025-12-10 00:20:03,580 - engine.scraper_v2 - INFO - ✅ Selenium driver closed
+2025-12-10 00:27:18,124 - WDM - INFO - ====== WebDriver manager ======
+2025-12-10 00:27:19,525 - WDM - INFO - Get LATEST chromedriver version for google-chrome
+2025-12-10 00:27:20,207 - WDM - INFO - Get LATEST chromedriver version for google-chrome
+2025-12-10 00:27:21,645 - WDM - INFO - Driver [/Users/koded/.wdm/drivers/chromedriver/mac64/128.0.6613.137/chromedriver-mac-x64/chromedriver] found in cache
+2025-12-10 00:27:23,539 - engine.scraper_v2 - INFO - ✅ Selenium driver initialized
+2025-12-10 00:27:23,539 - engine.scraper_v2 - INFO - ✅ Jiji Selenium scraper initialized
+2025-12-10 00:27:23,540 - WDM - INFO - ====== WebDriver manager ======
+2025-12-10 00:27:24,290 - WDM - INFO - Get LATEST chromedriver version for google-chrome
+2025-12-10 00:27:24,903 - WDM - INFO - Get LATEST chromedriver version for google-chrome
+2025-12-10 00:27:25,644 - WDM - INFO - Driver [/Users/koded/.wdm/drivers/chromedriver/mac64/128.0.6613.137/chromedriver-mac-x64/chromedriver] found in cache
+2025-12-10 00:27:28,730 - engine.scraper_v2 - INFO - ✅ Selenium driver initialized
+2025-12-10 00:27:28,833 - engine.scraper_v2 - INFO - ✅ Konga Selenium scraper initialized
+2025-12-10 00:27:28,833 - engine.scraper_v2 - INFO - 🚀 Enhanced ScraperManager initialized
+2025-12-10 00:27:28,833 - engine.scraper_v2 - INFO - 🎯 Starting ENHANCED scrape for: iPhone 13
+2025-12-10 00:27:28,833 - engine.scraper_v2 - INFO - 🛍️  Searching Jumia: iPhone 13
+2025-12-10 00:27:32,596 - engine.scraper_v2 - INFO - 📦 Found 3 products on Jumia
+2025-12-10 00:27:32,604 - engine.scraper_v2 - INFO - ✅ Jumia: Parsed 3 products
+2025-12-10 00:27:32,605 - engine.scraper_v2 - INFO - 🔍 Searching Jiji (Selenium) for: iPhone 13
+2025-12-10 00:27:32,605 - engine.scraper_v2 - INFO - 🌐 Navigating to: https://jiji.ng/search?query=iPhone+13
+2025-12-10 00:27:39,255 - engine.scraper_v2 - WARNING - 🛡️ CAPTCHA detected on Jiji
+2025-12-10 00:27:39,259 - engine.scraper_v2 - WARNING - 🤖 Running in headless mode, refreshing page...
+2025-12-10 00:28:01,194 - engine.scraper_v2 - INFO - Found 80 total listings
+2025-12-10 00:28:05,241 - engine.scraper_v2 - INFO - 🎉 Jiji Selenium: Successfully parsed 3 listings
+2025-12-10 00:28:05,242 - engine.scraper_v2 - INFO - 🔍 Searching Konga (Selenium) for: iPhone 13
+2025-12-10 00:28:05,242 - engine.scraper_v2 - INFO - 🌐 Navigating to: https://www.konga.com/search?search=iPhone%2013
+2025-12-10 00:28:58,981 - WDM - INFO - ====== WebDriver manager ======
+2025-12-10 00:28:59,404 - WDM - INFO - Get LATEST chromedriver version for google-chrome
+2025-12-10 00:29:04,162 - WDM - INFO - Get LATEST chromedriver version for google-chrome
+2025-12-10 00:29:05,874 - WDM - INFO - Driver [/Users/koded/.wdm/drivers/chromedriver/mac64/128.0.6613.137/chromedriver-mac-x64/chromedriver] found in cache
+2025-12-10 00:29:19,730 - engine.scraper_v2 - INFO - ✅ Selenium driver initialized
+2025-12-10 00:29:19,731 - engine.scraper_v2 - INFO - ✅ Jiji Selenium scraper initialized
+2025-12-10 00:29:19,732 - WDM - INFO - ====== WebDriver manager ======
+2025-12-10 00:29:20,278 - WDM - INFO - Get LATEST chromedriver version for google-chrome
+2025-12-10 00:29:20,966 - WDM - INFO - Get LATEST chromedriver version for google-chrome
+2025-12-10 00:29:21,962 - WDM - INFO - Driver [/Users/koded/.wdm/drivers/chromedriver/mac64/128.0.6613.137/chromedriver-mac-x64/chromedriver] found in cache
+2025-12-10 00:29:40,732 - engine.scraper_v2 - INFO - ✅ Selenium driver initialized
+2025-12-10 00:29:40,734 - engine.scraper_v2 - INFO - ✅ Konga Selenium scraper initialized
+2025-12-10 00:29:40,735 - engine.scraper_v2 - INFO - 🚀 Enhanced ScraperManager initialized
+2025-12-10 00:29:40,735 - engine.scraper_v2 - INFO - 🎯 Starting ENHANCED scrape for: iPhone 13
+2025-12-10 00:29:40,735 - engine.scraper_v2 - INFO - 🛍️  Searching Jumia: iPhone 13
+2025-12-10 00:29:45,229 - engine.scraper_v2 - INFO - 📦 Found 3 products on Jumia
+2025-12-10 00:29:45,296 - engine.scraper_v2 - INFO - ✅ Jumia: Parsed 3 products
+2025-12-10 00:29:45,296 - engine.scraper_v2 - INFO - 🔍 Searching Jiji (Selenium) for: iPhone 13
+2025-12-10 00:29:45,297 - engine.scraper_v2 - INFO - 🌐 Navigating to: https://jiji.ng/search?query=iPhone+13
+2025-12-10 00:30:00,084 - engine.scraper_v2 - WARNING - Products not found with standard selectors
+2025-12-10 00:30:01,214 - engine.scraper_v2 - INFO - ✅ Konga Selenium: Found 3 product links
+2025-12-10 00:30:01,214 - engine.scraper_v2 - INFO - 📦 Konga Selenium: Parsing 3 products
+2025-12-10 00:30:01,222 - engine.scraper_v2 - WARNING - Konga: No price found for: N/A
+2025-12-10 00:30:02,112 - engine.scraper_v2 - WARNING - Konga: No price found for: N/A
+2025-12-10 00:30:02,962 - engine.scraper_v2 - WARNING - Konga: No price found for: N/A
+2025-12-10 00:30:03,477 - engine.scraper_v2 - INFO - ✅ Konga Selenium: Successfully parsed 0 products
+2025-12-10 00:30:03,492 - engine.scraper_v2 - INFO - 📈 Total items scraped: 6
+2025-12-10 00:30:03,492 - engine.scraper_v2 - INFO - ✅ JUMIA: 3 items
+2025-12-10 00:30:03,492 - engine.scraper_v2 - INFO - ✅ JIJI (Selenium): 3 items
+2025-12-10 00:30:03,492 - engine.scraper_v2 - INFO - ✅ KONGA: 0 items
+2025-12-10 00:30:03,914 - engine.scraper_v2 - INFO - 💾 Saved results to engine/data/iPhone_13_test_SELENIUM_20251210_003003.json
+2025-12-10 00:30:09,228 - engine.scraper_v2 - WARNING - 🛡️ CAPTCHA detected on Jiji
+2025-12-10 00:30:09,229 - engine.scraper_v2 - WARNING - 🤖 Running in headless mode, refreshing page...
+2025-12-10 00:30:17,263 - engine.scraper_v2 - INFO - ✅ Selenium driver closed
+2025-12-10 00:30:17,752 - engine.scraper_v2 - INFO - ✅ Selenium driver closed
+2025-12-10 00:30:17,753 - engine.scraper_v2 - INFO - ✅ All Selenium drivers closed
+2025-12-10 00:30:17,822 - urllib3.connectionpool - WARNING - Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<urllib3.connection.HTTPConnection object at 0x11036b4f0>: Failed to establish a new connection: [Errno 61] Connection refused')': /session/192e1f8ca07fb486aa258d3256a67ac9
+2025-12-10 00:30:17,827 - urllib3.connectionpool - WARNING - Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<urllib3.connection.HTTPConnection object at 0x1102fae50>: Failed to establish a new connection: [Errno 61] Connection refused')': /session/192e1f8ca07fb486aa258d3256a67ac9
+2025-12-10 00:30:17,828 - urllib3.connectionpool - WARNING - Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<urllib3.connection.HTTPConnection object at 0x1101c1eb0>: Failed to establish a new connection: [Errno 61] Connection refused')': /session/192e1f8ca07fb486aa258d3256a67ac9
+2025-12-10 00:30:17,830 - engine.scraper_v2 - INFO - ✅ Selenium driver closed
+2025-12-10 00:30:17,833 - urllib3.connectionpool - WARNING - Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<urllib3.connection.HTTPConnection object at 0x10f9b91c0>: Failed to establish a new connection: [Errno 61] Connection refused')': /session/8205d82b8cdffd4da3798c18dd75c443
+2025-12-10 00:30:17,834 - urllib3.connectionpool - WARNING - Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<urllib3.connection.HTTPConnection object at 0x10f7aa100>: Failed to establish a new connection: [Errno 61] Connection refused')': /session/8205d82b8cdffd4da3798c18dd75c443
+2025-12-10 00:30:17,835 - urllib3.connectionpool - WARNING - Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<urllib3.connection.HTTPConnection object at 0x10f469880>: Failed to establish a new connection: [Errno 61] Connection refused')': /session/8205d82b8cdffd4da3798c18dd75c443
+2025-12-10 00:30:17,837 - engine.scraper_v2 - INFO - ✅ Selenium driver closed
+2025-12-10 00:30:37,389 - engine.scraper_v2 - INFO - Found 78 total listings
+2025-12-10 00:30:41,419 - engine.scraper_v2 - INFO - 🎉 Jiji Selenium: Successfully parsed 3 listings
+2025-12-10 00:30:41,796 - engine.scraper_v2 - INFO - 🔍 Searching Konga (Selenium) for: iPhone 13
+2025-12-10 00:30:41,796 - engine.scraper_v2 - INFO - 🌐 Navigating to: https://www.konga.com/search?search=iPhone%2013
+2025-12-10 00:31:38,800 - engine.scraper_v2 - WARNING - Products not found with standard selectors
+2025-12-10 00:31:39,338 - engine.scraper_v2 - WARNING - ❌ Konga Selenium: No products found
+2025-12-10 00:31:39,338 - engine.scraper_v2 - INFO - 📈 Total items scraped: 6
+2025-12-10 00:31:39,339 - engine.scraper_v2 - INFO - ✅ JUMIA: 3 items
+2025-12-10 00:31:39,339 - engine.scraper_v2 - INFO - ✅ JIJI (Selenium): 3 items
+2025-12-10 00:31:39,339 - engine.scraper_v2 - INFO - ✅ KONGA: 0 items
+2025-12-10 00:31:39,452 - engine.scraper_v2 - INFO - 💾 Saved results to engine/data/iPhone_13_test_SELENIUM_20251210_003139.json
+2025-12-10 00:31:40,295 - engine.scraper_v2 - INFO - ✅ Selenium driver closed
+2025-12-10 00:31:41,655 - engine.scraper_v2 - INFO - ✅ Selenium driver closed
+2025-12-10 00:31:41,655 - engine.scraper_v2 - INFO - ✅ All Selenium drivers closed
+2025-12-10 00:31:41,694 - urllib3.connectionpool - WARNING - Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<urllib3.connection.HTTPConnection object at 0x10e53b7c0>: Failed to establish a new connection: [Errno 61] Connection refused')': /session/0693e56fe85664587c8b909e895d3a79
+2025-12-10 00:31:41,696 - urllib3.connectionpool - WARNING - Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<urllib3.connection.HTTPConnection object at 0x10e4cb700>: Failed to establish a new connection: [Errno 61] Connection refused')': /session/0693e56fe85664587c8b909e895d3a79
+2025-12-10 00:31:41,697 - urllib3.connectionpool - WARNING - Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<urllib3.connection.HTTPConnection object at 0x10e442dc0>: Failed to establish a new connection: [Errno 61] Connection refused')': /session/0693e56fe85664587c8b909e895d3a79
+2025-12-10 00:31:41,700 - engine.scraper_v2 - INFO - ✅ Selenium driver closed
+2025-12-10 00:31:41,701 - urllib3.connectionpool - WARNING - Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<urllib3.connection.HTTPConnection object at 0x10d7b3f40>: Failed to establish a new connection: [Errno 61] Connection refused')': /session/d6c5ffff21229aa7a5a6247099c7cc11
+2025-12-10 00:31:41,703 - urllib3.connectionpool - WARNING - Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<urllib3.connection.HTTPConnection object at 0x10d5c6040>: Failed to establish a new connection: [Errno 61] Connection refused')': /session/d6c5ffff21229aa7a5a6247099c7cc11
+2025-12-10 00:31:41,704 - urllib3.connectionpool - WARNING - Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<urllib3.connection.HTTPConnection object at 0x10cb9e070>: Failed to establish a new connection: [Errno 61] Connection refused')': /session/d6c5ffff21229aa7a5a6247099c7cc11
+2025-12-10 00:31:41,705 - engine.scraper_v2 - INFO - ✅ Selenium driver closed
+2025-12-10 00:35:38,961 - WDM - INFO - ====== WebDriver manager ======
+2025-12-10 00:35:39,196 - WDM - INFO - Get LATEST chromedriver version for google-chrome
+2025-12-10 00:35:39,819 - WDM - INFO - Get LATEST chromedriver version for google-chrome
+2025-12-10 00:35:40,778 - WDM - INFO - Driver [/Users/koded/.wdm/drivers/chromedriver/mac64/128.0.6613.137/chromedriver-mac-x64/chromedriver] found in cache
+2025-12-10 00:35:44,666 - engine.scraper_v2 - INFO - ✅ Selenium driver initialized
+2025-12-10 00:35:44,677 - engine.scraper_v2 - INFO - ✅ Jiji Selenium scraper initialized
+2025-12-10 00:35:44,778 - WDM - INFO - ====== WebDriver manager ======
+2025-12-10 00:35:58,498 - WDM - INFO - Get LATEST chromedriver version for google-chrome
+2025-12-10 00:35:59,129 - WDM - INFO - Get LATEST chromedriver version for google-chrome
+2025-12-10 00:35:59,779 - WDM - INFO - Driver [/Users/koded/.wdm/drivers/chromedriver/mac64/128.0.6613.137/chromedriver-mac-x64/chromedriver] found in cache
+2025-12-10 00:36:31,685 - engine.scraper_v2 - INFO - ✅ Selenium driver initialized
+2025-12-10 00:36:31,685 - engine.scraper_v2 - INFO - ✅ Konga Selenium scraper initialized
+2025-12-10 00:36:31,686 - engine.scraper_v2 - INFO - 🚀 Enhanced ScraperManager initialized
+2025-12-10 00:36:31,686 - engine.scraper_v2 - INFO - 🎯 Starting ENHANCED scrape for: iPhone 13
+2025-12-10 00:36:31,686 - engine.scraper_v2 - INFO - 🛍️  Searching Jumia: iPhone 13
+2025-12-10 00:36:36,010 - engine.scraper_v2 - INFO - 📦 Found 3 products on Jumia
+2025-12-10 00:36:36,014 - engine.scraper_v2 - INFO - ✅ Jumia: Parsed 3 products
+2025-12-10 00:36:36,015 - engine.scraper_v2 - INFO - 🔍 Searching Jiji (Selenium) for: iPhone 13
+2025-12-10 00:36:36,015 - engine.scraper_v2 - INFO - 🌐 Navigating to: https://jiji.ng/search?query=iPhone+13
+2025-12-10 00:36:43,636 - engine.scraper_v2 - WARNING - 🛡️ CAPTCHA detected on Jiji
+2025-12-10 00:36:43,637 - engine.scraper_v2 - WARNING - 🤖 Running in headless mode, refreshing page...
+2025-12-10 00:37:03,618 - engine.scraper_v2 - INFO - Found 80 total listings
+2025-12-10 00:37:07,045 - engine.scraper_v2 - INFO - 🎉 Jiji Selenium: Successfully parsed 3 listings
+2025-12-10 00:37:07,045 - engine.scraper_v2 - INFO - 🔍 Searching Konga (Selenium) for: iPhone 13
+2025-12-10 00:37:07,045 - engine.scraper_v2 - INFO - 🌐 Navigating to: https://www.konga.com/search?search=iPhone%2013
+2025-12-10 00:38:05,600 - engine.scraper_v2 - WARNING - Products not found with standard selectors
+2025-12-10 00:38:07,457 - engine.scraper_v2 - INFO - ✅ Konga Selenium: Found 3 product links
+2025-12-10 00:38:07,457 - engine.scraper_v2 - INFO - 📦 Konga Selenium: Parsing 3 products
+2025-12-10 00:38:07,469 - engine.scraper_v2 - WARNING - Konga: No price found for: N/A
+2025-12-10 00:38:08,168 - engine.scraper_v2 - WARNING - Konga: No price found for: N/A
+2025-12-10 00:38:09,914 - engine.scraper_v2 - WARNING - Konga: No price found for: N/A
+2025-12-10 00:38:10,846 - engine.scraper_v2 - INFO - ✅ Konga Selenium: Successfully parsed 0 products
+2025-12-10 00:38:10,847 - engine.scraper_v2 - INFO - 📈 Total items scraped: 6
+2025-12-10 00:38:10,847 - engine.scraper_v2 - INFO - ✅ JUMIA: 3 items
+2025-12-10 00:38:10,847 - engine.scraper_v2 - INFO - ✅ JIJI (Selenium): 3 items
+2025-12-10 00:38:10,848 - engine.scraper_v2 - INFO - ✅ KONGA: 0 items
+2025-12-10 00:38:10,913 - engine.scraper_v2 - INFO - 💾 Saved results to engine/data/iPhone_13_test_SELENIUM_20251210_003810.json
+2025-12-10 00:38:11,899 - engine.scraper_v2 - INFO - ✅ Selenium driver closed
+2025-12-10 00:38:12,264 - engine.scraper_v2 - INFO - ✅ Selenium driver closed
+2025-12-10 00:38:12,264 - engine.scraper_v2 - INFO - ✅ All Selenium drivers closed
+2025-12-10 00:38:12,353 - urllib3.connectionpool - WARNING - Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<urllib3.connection.HTTPConnection object at 0x10a6a2340>: Failed to establish a new connection: [Errno 61] Connection refused')': /session/c41a86407dd7f17f4d5d5dbb91ecc72c
+2025-12-10 00:38:12,355 - urllib3.connectionpool - WARNING - Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<urllib3.connection.HTTPConnection object at 0x10a552940>: Failed to establish a new connection: [Errno 61] Connection refused')': /session/c41a86407dd7f17f4d5d5dbb91ecc72c
+2025-12-10 00:38:12,356 - urllib3.connectionpool - WARNING - Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<urllib3.connection.HTTPConnection object at 0x10a4c91f0>: Failed to establish a new connection: [Errno 61] Connection refused')': /session/c41a86407dd7f17f4d5d5dbb91ecc72c
+2025-12-10 00:38:12,358 - engine.scraper_v2 - INFO - ✅ Selenium driver closed
+2025-12-10 00:38:12,360 - urllib3.connectionpool - WARNING - Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<urllib3.connection.HTTPConnection object at 0x109d8d280>: Failed to establish a new connection: [Errno 61] Connection refused')': /session/8158c03c94aba65b7b85e76d049f7636
+2025-12-10 00:38:12,361 - urllib3.connectionpool - WARNING - Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<urllib3.connection.HTTPConnection object at 0x109cf10a0>: Failed to establish a new connection: [Errno 61] Connection refused')': /session/8158c03c94aba65b7b85e76d049f7636
+2025-12-10 00:38:12,365 - urllib3.connectionpool - WARNING - Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<urllib3.connection.HTTPConnection object at 0x109a84d60>: Failed to establish a new connection: [Errno 61] Connection refused')': /session/8158c03c94aba65b7b85e76d049f7636
+2025-12-10 00:38:12,367 - engine.scraper_v2 - INFO - ✅ Selenium driver closed
+2025-12-10 00:45:34,394 - engine.scraper_v2 - INFO - 🛍️  Searching Jumia for: iPhone 13
+2025-12-10 00:45:55,749 - engine.scraper_v2 - INFO - 📦 Jumia: Parsed 0 products
+2025-12-10 00:46:00,168 - engine.scraper_v2 - INFO - 📦 Jumia: Parsed 5 products
+2025-12-10 00:46:00,168 - engine.scraper_v2 - WARNING - ❌ Jumia: No actual products found
+2025-12-10 00:46:00,169 - WDM - INFO - ====== WebDriver manager ======
+2025-12-10 00:46:01,409 - WDM - INFO - Get LATEST chromedriver version for google-chrome
+2025-12-10 00:46:02,006 - WDM - INFO - Get LATEST chromedriver version for google-chrome
+2025-12-10 00:46:02,606 - WDM - INFO - Driver [/Users/koded/.wdm/drivers/chromedriver/mac64/128.0.6613.137/chromedriver-mac-x64/chromedriver] found in cache
+2025-12-10 00:46:03,862 - engine.scraper_v2 - INFO - ✅ Selenium driver initialized
+2025-12-10 00:46:03,862 - engine.scraper_v2 - INFO - ✅ Jiji Selenium initialized (headless)
+2025-12-10 00:46:03,863 - WDM - INFO - ====== WebDriver manager ======
+2025-12-10 00:46:04,109 - WDM - INFO - Get LATEST chromedriver version for google-chrome
+2025-12-10 00:46:04,764 - WDM - INFO - Get LATEST chromedriver version for google-chrome
+2025-12-10 00:46:05,404 - WDM - INFO - Driver [/Users/koded/.wdm/drivers/chromedriver/mac64/128.0.6613.137/chromedriver-mac-x64/chromedriver] found in cache
+2025-12-10 00:46:08,006 - engine.scraper_v2 - INFO - ✅ Selenium driver initialized
+2025-12-10 00:46:08,006 - engine.scraper_v2 - INFO - ✅ Konga Selenium initialized (headless)
+2025-12-10 00:46:08,006 - engine.scraper_v2 - INFO - 🚀 Enhanced ScraperManager initialized
+2025-12-10 00:46:08,007 - engine.scraper_v2 - INFO - 🎯 Starting ENHANCED scrape for: iPhone 13 Pro Max
+2025-12-10 00:46:08,007 - engine.scraper_v2 - INFO - 🛍️  Searching Jumia for: iPhone 13 Pro Max
+2025-12-10 00:46:31,550 - engine.scraper_v2 - INFO - 📦 Jumia: Parsed 0 products
+2025-12-10 00:46:35,709 - engine.scraper_v2 - INFO - 📦 Jumia: Parsed 3 products
+2025-12-10 00:46:35,709 - engine.scraper_v2 - WARNING - ❌ Jumia: No actual products found
+2025-12-10 00:46:35,710 - engine.scraper_v2 - INFO - 🔍 Searching Jiji (Selenium) for: iPhone 13 Pro Max
+2025-12-10 00:46:35,710 - engine.scraper_v2 - INFO - 🌐 Navigating to: https://jiji.ng/search?query=iPhone+13+Pro+Max
+2025-12-10 00:47:13,000 - engine.scraper_v2 - WARNING - 🛡️ CAPTCHA detected on Jiji
+2025-12-10 00:47:13,002 - engine.scraper_v2 - WARNING - 🤖 Running in headless mode, refreshing page...
+2025-12-10 00:47:36,663 - engine.scraper_v2 - INFO - Found 80 total listings
+2025-12-10 00:47:40,025 - engine.scraper_v2 - INFO - 🎉 Jiji Selenium: Successfully parsed 3 listings
+2025-12-10 00:47:40,026 - engine.scraper_v2 - INFO - 🔍 Searching Konga (Selenium) for: iPhone 13 Pro Max
+2025-12-10 00:47:40,026 - engine.scraper_v2 - INFO - 🌐 Navigating to: https://www.konga.com/search?search=iPhone%2013%20Pro%20Max
+2025-12-10 00:48:32,060 - engine.scraper_v2 - WARNING - Products not found with standard selectors
+2025-12-10 00:48:33,604 - engine.scraper_v2 - INFO - ✅ Konga Selenium: Found 3 product links
+2025-12-10 00:48:33,605 - engine.scraper_v2 - INFO - 📦 Konga Selenium: Parsing 3 products
+2025-12-10 00:48:36,107 - engine.scraper_v2 - INFO - ✅ Konga Selenium: Successfully parsed 0 products
+2025-12-10 00:48:36,108 - engine.scraper_v2 - INFO - 📈 Total items scraped: 3
+2025-12-10 00:48:36,108 - engine.scraper_v2 - INFO - ✅ JUMIA: 0 items
+2025-12-10 00:48:36,109 - engine.scraper_v2 - INFO - ✅ JIJI (Selenium): 3 items
+2025-12-10 00:48:36,109 - engine.scraper_v2 - INFO - ✅ KONGA: 0 items
+2025-12-10 00:48:36,490 - engine.scraper_v2 - INFO - ✅ Selenium driver closed
+2025-12-10 00:48:37,413 - engine.scraper_v2 - INFO - ✅ Selenium driver closed
+2025-12-10 00:51:41,258 - engine.scraper_v2 - INFO - 🛍️  Searching Jumia: iPhone 13
+2025-12-10 00:51:45,581 - engine.scraper_v2 - INFO - 📦 Found 10 total products on Jumia
+2025-12-10 00:51:45,597 - engine.scraper_v2 - INFO - 📱 iPhone analysis: 0 phones, 10 accessories
+2025-12-10 00:51:45,598 - engine.scraper_v2 - INFO - No actual iPhones found, showing iPhone accessories
+2025-12-10 00:51:45,598 - engine.scraper_v2 - INFO - ✅ Jumia: Returning 5 relevant products
+2025-12-10 00:51:45,601 - WDM - INFO - ====== WebDriver manager ======
+2025-12-10 00:51:46,475 - WDM - INFO - Get LATEST chromedriver version for google-chrome
+2025-12-10 00:51:47,096 - WDM - INFO - Get LATEST chromedriver version for google-chrome
+2025-12-10 00:51:47,743 - WDM - INFO - Driver [/Users/koded/.wdm/drivers/chromedriver/mac64/128.0.6613.137/chromedriver-mac-x64/chromedriver] found in cache
+2025-12-10 00:51:49,028 - engine.scraper_v2 - INFO - ✅ Selenium driver initialized
+2025-12-10 00:51:49,029 - engine.scraper_v2 - INFO - ✅ Jiji Selenium initialized (headless)
+2025-12-10 00:51:49,029 - WDM - INFO - ====== WebDriver manager ======
+2025-12-10 00:51:49,269 - WDM - INFO - Get LATEST chromedriver version for google-chrome
+2025-12-10 00:51:49,876 - WDM - INFO - Get LATEST chromedriver version for google-chrome
+2025-12-10 00:51:50,530 - WDM - INFO - Driver [/Users/koded/.wdm/drivers/chromedriver/mac64/128.0.6613.137/chromedriver-mac-x64/chromedriver] found in cache
+2025-12-10 00:51:52,213 - engine.scraper_v2 - INFO - ✅ Selenium driver initialized
+2025-12-10 00:51:52,214 - engine.scraper_v2 - INFO - ✅ Konga Selenium initialized (headless)
+2025-12-10 00:51:52,214 - engine.scraper_v2 - INFO - 🚀 Enhanced ScraperManager initialized
+2025-12-10 00:51:52,214 - engine.scraper_v2 - INFO - 🎯 Starting ENHANCED scrape for: iPhone 13 Pro Max
+2025-12-10 00:51:52,215 - engine.scraper_v2 - INFO - 🛍️  Searching Jumia: iPhone 13 Pro Max
+2025-12-10 00:51:56,593 - engine.scraper_v2 - INFO - 📦 Found 6 total products on Jumia
+2025-12-10 00:51:56,599 - engine.scraper_v2 - INFO - 📱 iPhone analysis: 0 phones, 6 accessories
+2025-12-10 00:51:56,599 - engine.scraper_v2 - INFO - No actual iPhones found, showing iPhone accessories
+2025-12-10 00:51:56,599 - engine.scraper_v2 - INFO - ✅ Jumia: Returning 3 relevant products
+2025-12-10 00:51:56,599 - engine.scraper_v2 - INFO - 🔍 Searching Jiji (Selenium) for: iPhone 13 Pro Max
+2025-12-10 00:51:56,600 - engine.scraper_v2 - INFO - 🌐 Navigating to: https://jiji.ng/search?query=iPhone+13+Pro+Max
+2025-12-10 00:52:02,838 - engine.scraper_v2 - WARNING - 🛡️ CAPTCHA detected on Jiji
+2025-12-10 00:52:02,848 - engine.scraper_v2 - WARNING - 🤖 Running in headless mode, refreshing page...
+2025-12-10 00:52:22,781 - engine.scraper_v2 - INFO - Found 79 total listings
+2025-12-10 00:52:26,453 - engine.scraper_v2 - INFO - 🎉 Jiji Selenium: Successfully parsed 3 listings
+2025-12-10 00:52:26,453 - engine.scraper_v2 - INFO - 🔍 Searching Konga (Selenium) for: iPhone 13 Pro Max
+2025-12-10 00:52:26,453 - engine.scraper_v2 - INFO - 🌐 Navigating to: https://www.konga.com/search?search=iPhone%2013%20Pro%20Max
+2025-12-10 00:53:29,470 - engine.scraper_v2 - WARNING - Products not found with standard selectors
+2025-12-10 00:53:30,172 - engine.scraper_v2 - INFO - ✅ Konga Selenium: Found 3 product links
+2025-12-10 00:53:30,433 - engine.scraper_v2 - INFO - 📦 Konga Selenium: Parsing 3 products
+2025-12-10 00:53:32,602 - engine.scraper_v2 - INFO - ✅ Konga Selenium: Successfully parsed 0 products
+2025-12-10 00:53:32,602 - engine.scraper_v2 - INFO - 📈 Total items scraped: 6
+2025-12-10 00:53:32,603 - engine.scraper_v2 - INFO - ✅ JUMIA: 3 items
+2025-12-10 00:53:32,603 - engine.scraper_v2 - INFO - ✅ JIJI (Selenium): 3 items
+2025-12-10 00:53:32,603 - engine.scraper_v2 - INFO - ✅ KONGA: 0 items
+2025-12-10 00:53:33,037 - engine.scraper_v2 - INFO - ✅ Selenium driver closed
+2025-12-10 00:53:33,479 - engine.scraper_v2 - INFO - ✅ Selenium driver closed
+2025-12-10 01:00:03,787 - engine.scraper_v2 - INFO - 🔍 Searching Jumia ROBUSTLY for: iPhone 13
+2025-12-10 01:00:03,790 - engine.scraper_v2 - INFO - 📁 Searching in category: /mobile-phones/apple/
+2025-12-10 01:00:05,718 - engine.scraper_v2 - INFO - ✅ Strategy found 6 items
+2025-12-10 01:00:05,718 - engine.scraper_v2 - INFO - 🏆 Top result: Apple IPhone 11 6.1-Inch Liquid Retina LCD (4GB RAM, 64GB RO...
+2025-12-10 01:00:05,719 - engine.scraper_v2 - INFO - 💰 Price range: ₦500,000 - ₦2,900,000
+2025-12-10 01:00:05,719 - engine.scraper_v2 - INFO - 🎯 Jumia ROBUST: Found 6 relevant products
+2025-12-10 01:05:28,771 - WDM - INFO - ====== WebDriver manager ======
+2025-12-10 01:05:29,804 - WDM - INFO - Get LATEST chromedriver version for google-chrome
+2025-12-10 01:05:30,974 - WDM - INFO - Get LATEST chromedriver version for google-chrome
+2025-12-10 01:05:31,629 - WDM - INFO - Driver [/Users/koded/.wdm/drivers/chromedriver/mac64/128.0.6613.137/chromedriver-mac-x64/chromedriver] found in cache
+2025-12-10 01:05:33,436 - engine.scraper_v2 - INFO - ✅ Selenium driver initialized
+2025-12-10 01:05:33,437 - WDM - INFO - ====== WebDriver manager ======
+2025-12-10 01:05:33,697 - WDM - INFO - Get LATEST chromedriver version for google-chrome
+2025-12-10 01:05:34,335 - WDM - INFO - Get LATEST chromedriver version for google-chrome
+2025-12-10 01:05:34,904 - WDM - INFO - Driver [/Users/koded/.wdm/drivers/chromedriver/mac64/128.0.6613.137/chromedriver-mac-x64/chromedriver] found in cache
+2025-12-10 01:05:52,803 - engine.scraper_v2 - INFO - ✅ Selenium driver initialized
+2025-12-10 01:05:52,804 - engine.scraper_v2 - INFO - 🔍 Searching Jumia ROBUSTLY for: iPhone 13
+2025-12-10 01:05:52,804 - engine.scraper_v2 - INFO - 📁 Searching in category: /mobile-phones/apple/
+2025-12-10 01:05:56,231 - engine.scraper_v2 - INFO - ✅ Strategy found 4 items
+2025-12-10 01:05:56,231 - engine.scraper_v2 - INFO - 🏆 Top result: Apple IPhone 11 6.1-Inch Liquid Retina LCD (4GB RAM, 64GB RO...
+2025-12-10 01:05:56,392 - engine.scraper_v2 - INFO - 💰 Price range: ₦500,000 - ₦1,899,000
+2025-12-10 01:05:56,395 - engine.scraper_v2 - INFO - 🎯 Jumia ROBUST: Found 4 relevant products
+2025-12-10 01:05:56,395 - engine.scraper_v2 - INFO - 🔍 Searching Jiji (Selenium) for: iPhone 13
+2025-12-10 01:05:56,404 - engine.scraper_v2 - INFO - 🌐 Navigating to: https://jiji.ng/search?query=iPhone+13
+2025-12-10 01:06:18,183 - engine.scraper_v2 - WARNING - 🛡️ CAPTCHA detected on Jiji
+2025-12-10 01:06:18,398 - engine.scraper_v2 - WARNING - 🤖 Running in headless mode, refreshing page...
+2025-12-10 01:07:04,079 - engine.scraper_v2 - INFO - Found 80 total listings
+2025-12-10 01:07:09,077 - engine.scraper_v2 - INFO - 🎉 Jiji Selenium: Successfully parsed 4 listings
+2025-12-10 01:07:11,484 - engine.scraper_v2 - INFO - 🔍 Searching Konga (Selenium) for: iPhone 13
+2025-12-10 01:07:11,485 - engine.scraper_v2 - INFO - 🌐 Navigating to: https://www.konga.com/search?search=iPhone%2013
+2025-12-10 01:08:00,114 - engine.scraper_v2 - WARNING - Products not found with standard selectors
+2025-12-10 01:08:01,042 - engine.scraper_v2 - INFO - ✅ Konga Selenium: Found 4 product links
+2025-12-10 01:08:01,043 - engine.scraper_v2 - INFO - 📦 Konga Selenium: Parsing 4 products
+2025-12-10 01:08:03,890 - engine.scraper_v2 - INFO - ✅ Konga Selenium: Successfully parsed 0 products
+2025-12-10 01:08:04,159 - engine.scraper_v2 - INFO - ✅ Selenium driver closed
+2025-12-10 01:08:04,391 - engine.scraper_v2 - INFO - ✅ Selenium driver closed
+2025-12-10 01:08:04,396 - urllib3.connectionpool - WARNING - Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<urllib3.connection.HTTPConnection object at 0x10aa7f3a0>: Failed to establish a new connection: [Errno 61] Connection refused')': /session/b5cfd1e316cdeac47451442b2a5812d8
+2025-12-10 01:08:04,399 - urllib3.connectionpool - WARNING - Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<urllib3.connection.HTTPConnection object at 0x10aa7f250>: Failed to establish a new connection: [Errno 61] Connection refused')': /session/b5cfd1e316cdeac47451442b2a5812d8
+2025-12-10 01:08:04,410 - urllib3.connectionpool - WARNING - Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<urllib3.connection.HTTPConnection object at 0x108e84e20>: Failed to establish a new connection: [Errno 61] Connection refused')': /session/b5cfd1e316cdeac47451442b2a5812d8
+2025-12-10 01:08:04,416 - engine.scraper_v2 - INFO - ✅ Selenium driver closed
+2025-12-10 01:08:04,418 - urllib3.connectionpool - WARNING - Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<urllib3.connection.HTTPConnection object at 0x10aa6c550>: Failed to establish a new connection: [Errno 61] Connection refused')': /session/789b91fb612a2f7d674aa30fd3e4d100
+2025-12-10 01:08:04,422 - urllib3.connectionpool - WARNING - Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<urllib3.connection.HTTPConnection object at 0x10bf146a0>: Failed to establish a new connection: [Errno 61] Connection refused')': /session/789b91fb612a2f7d674aa30fd3e4d100
+2025-12-10 01:08:04,425 - urllib3.connectionpool - WARNING - Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<urllib3.connection.HTTPConnection object at 0x10bf145e0>: Failed to establish a new connection: [Errno 61] Connection refused')': /session/789b91fb612a2f7d674aa30fd3e4d100
+2025-12-10 01:08:04,428 - engine.scraper_v2 - INFO - ✅ Selenium driver closed
