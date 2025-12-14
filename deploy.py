@@ -7,6 +7,7 @@ import subprocess
 import sys
 import time
 import os
+import docker
 
 def check_dependencies():
     """Check if all required dependencies are installed"""
@@ -26,7 +27,6 @@ def check_dependencies():
 def check_environment():
     """Check if environment variables are set"""
     required_vars = ["GROQ_API_KEY"]
-    optional_vars = ["WHATSAPP_PHONE_ID", "WHATSAPP_ACCESS_TOKEN"]
     
     missing = []
     for var in required_vars:
@@ -39,13 +39,7 @@ def check_environment():
         return False
     
     print("✅ Environment variables configured")
-    
-    # Check optional WhatsApp vars
-    whatsapp_configured = all(os.getenv(var) for var in optional_vars)
-    if not whatsapp_configured:
-        print("⚠️  WhatsApp not configured (messages won't be sent)")
-    else:
-        print("✅ WhatsApp configured")
+    print("✅ Evolution API v2 configured (using hardcoded key)")
     
     return True
 
@@ -61,6 +55,37 @@ def start_redis():
         print("❌ Redis not running. Please start Redis server:")
         print("Windows: Download from https://redis.io/download")
         print("Linux/Mac: sudo service redis-server start")
+        return False
+
+def start_evolution_api():
+    """Start Evolution API container"""
+    try:
+        if not os.path.exists("docker-compose.evolution.yml"):
+            print("❌ docker-compose.evolution.yml not found")
+            return False
+        
+        print("🐳 Starting Evolution API v2 container...")
+        result = subprocess.run([
+            "docker-compose", "-f", "docker-compose.evolution.yml", 
+            "up", "-d"
+        ], capture_output=True, text=True)
+        
+        if result.returncode == 0:
+            print("✅ Evolution API v2 container started")
+            print("📱 WhatsApp Manager: http://localhost:8081/manager")
+            print("🔗 Webhook configured: /webhook/evolution")
+            time.sleep(5)  # Wait for container to be ready
+            return True
+        else:
+            print(f"❌ Failed to start Evolution API: {result.stderr}")
+            return False
+            
+    except FileNotFoundError:
+        print("❌ Docker or docker-compose not found")
+        print("Please install Docker Desktop")
+        return False
+    except Exception as e:
+        print(f"❌ Error starting Evolution API: {e}")
         return False
 
 def start_api_server():
@@ -98,6 +123,9 @@ def main():
     if not start_redis():
         sys.exit(1)
     
+    if not start_evolution_api():
+        sys.exit(1)
+    
     # Start services
     processes = []
     
@@ -120,6 +148,9 @@ def main():
         print("\n📊 Service Status:")
         print("- API Server: http://localhost:8000")
         print("- API Docs: http://localhost:8000/docs")
+        print("- Evolution API v2: http://localhost:8081")
+        print("- WhatsApp Manager: http://localhost:8081/manager")
+        print("- Webhook Endpoint: http://localhost:8000/webhook/evolution")
         print("- Celery Worker: Running background tasks")
         print("- Celery Beat: Scheduling automated tasks")
         

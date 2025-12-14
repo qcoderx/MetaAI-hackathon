@@ -13,3 +13,4 @@ playwright==1.41.0
 pillow==10.2.0
 pytesseract==0.3.10
 instaloader==4.10.3
+docker==7.0.0

@@ -4,7 +4,7 @@ from sqlmodel import Session, select
 from app.database import get_session
 from app.models import SalesLog, Customer, Product, CompetitorPrice
 from brain.core_logic import PricingAgent
-from engine.whatsapp import send_price_drop_message, send_value_message
+from engine.whatsapp_evolution import EvolutionClient
 from engine.scraper_v2 import ScraperManager
 from engine.instagram import monitor_instagram_competitors
 import os
@@ -97,6 +97,7 @@ def retarget_ghosts_task():
             ).all()
             
             agent = PricingAgent()
+            evolution_client = EvolutionClient()
             messages_sent = 0
             
             for inquiry in ghost_inquiries:
@@ -118,20 +119,28 @@ def retarget_ghosts_task():
                     # Send appropriate message based on strategy
                     success = False
                     if decision["strategy"] == "price_drop":
-                        success = send_price_drop_message(
-                            phone=customer.phone,
+                        from brain.prompts import PRICE_DROP_TEMPLATE
+                        message = PRICE_DROP_TEMPLATE.format(
                             customer_name=customer.name or "Customer",
                             product_name=product.name,
-                            old_price=product.current_price,
-                            new_price=decision["recommended_price"]
+                            new_price=f"{decision['recommended_price']:,.0f}",
+                            old_price=f"{product.current_price:,.0f}",
+                            hours=4
                         )
+                        result = evolution_client.send_message(customer.phone, message)
+                        success = "error" not in result
                     else:  # value_reinforcement
-                        success = send_value_message(
-                            phone=customer.phone,
+                        from brain.prompts import VALUE_REINFORCEMENT_TEMPLATE
+                        message = VALUE_REINFORCEMENT_TEMPLATE.format(
                             customer_name=customer.name or "Customer",
                             product_name=product.name,
-                            price=product.current_price
+                            price=f"{product.current_price:,.0f}",
+                            model_year="2024",
+                            warranty="6-month",
+                            extra_value="Free delivery within Lagos"
                         )
+                        result = evolution_client.send_message(customer.phone, message)
+                        success = "error" not in result
                     
                     if success:
                         messages_sent += 1
