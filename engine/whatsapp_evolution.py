@@ -2,7 +2,7 @@ import requests
 import os
 import time
 from dotenv import load_dotenv
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Union, List
 
 load_dotenv()
 
@@ -50,16 +50,42 @@ class EvolutionClient:
         # Check existing instances
         result = self._make_request("GET", "/instance/fetchInstances")
         
-        if "error" in result:
+        if isinstance(result, dict) and "error" in result:
             print(f"Failed to fetch instances: {result['error']}")
             return
         
+        # Handle Evolution API v2 response format (direct list or wrapped in data)
+        instances = []
+        if isinstance(result, list):
+            instances = result
+        elif isinstance(result, dict) and "data" in result:
+            instances = result["data"]
+        
+        # Debug: Print found instances
+        print(f"Found {len(instances)} instances:")
+        for i, instance in enumerate(instances):
+            instance_name = None
+            if isinstance(instance, dict):
+                if "instanceName" in instance:
+                    instance_name = instance["instanceName"]
+                elif "instance" in instance and isinstance(instance["instance"], dict):
+                    instance_name = instance["instance"].get("instanceName")
+            print(f"  [{i}] Instance: {instance_name}")
+        
         # Check if our instance exists
-        instances = result.get("data", [])
-        instance_exists = any(
-            instance.get("instance", {}).get("instanceName") == self.instance_name 
-            for instance in instances
-        )
+        instance_exists = False
+        for instance in instances:
+            # Handle different nesting structures
+            instance_name = None
+            if isinstance(instance, dict):
+                if "instanceName" in instance:
+                    instance_name = instance["instanceName"]
+                elif "instance" in instance and isinstance(instance["instance"], dict):
+                    instance_name = instance["instance"].get("instanceName")
+            
+            if instance_name == self.instance_name:
+                instance_exists = True
+                break
         
         if not instance_exists:
             print(f"Creating Evolution API instance: {self.instance_name}")
@@ -76,22 +102,39 @@ class EvolutionClient:
         
         result = self._make_request("POST", "/instance/create", data)
         
-        if "error" not in result:
+        # Handle "already in use" as success
+        has_error = False
+        error_msg = ""
+        
+        if isinstance(result, dict) and "error" in result:
+            error_msg = str(result["error"])
+            # Check if it's "already in use" error (treat as success)
+            if "already in use" in error_msg.lower() or "403" in error_msg:
+                print(f"Instance {self.instance_name} already exists (403 - already in use)")
+                time.sleep(2)
+                return
+            else:
+                has_error = True
+        
+        if not has_error:
             print(f"Instance created successfully: {self.instance_name}")
             time.sleep(2)  # Wait for instance to initialize
         else:
-            print(f"Failed to create instance: {result['error']}")
+            print(f"Failed to create instance: {error_msg}")
     
     def get_qr_code(self) -> Optional[str]:
         """Get QR code for WhatsApp connection"""
         result = self._make_request("GET", f"/instance/connect/{self.instance_name}")
         
-        if "error" in result:
+        if isinstance(result, dict) and "error" in result:
             print(f"Failed to get QR code: {result['error']}")
             return None
         
-        # Extract base64 QR code
-        qr_data = result.get("base64", "")
+        # Extract base64 QR code - handle different response structures
+        qr_data = None
+        if isinstance(result, dict):
+            qr_data = result.get("base64") or result.get("qrcode") or result.get("qr")
+        
         if qr_data:
             print("QR Code available. Scan with WhatsApp to connect.")
             return qr_data
@@ -100,6 +143,21 @@ class EvolutionClient:
     
     def send_message(self, phone: str, text: str) -> Dict[str, Any]:
         """Send text message via Evolution API v2"""
+        # Check connection status before sending
+        status = self.get_instance_status()
+        connection_state = "unknown"
+        
+        if isinstance(status, dict):
+            if "instance" in status and isinstance(status["instance"], dict):
+                connection_state = status["instance"].get("state", "unknown")
+            elif "state" in status:
+                connection_state = status["state"]
+        
+        if connection_state != "open":
+            error_msg = f"❌ Error: WhatsApp not connected (state: {connection_state}). Please scan the QR code at http://localhost:8081/manager"
+            print(error_msg)
+            return {"error": error_msg}
+        
         # Clean phone number
         phone = phone.lstrip('+').replace(' ', '').replace('-', '')
         
@@ -120,11 +178,21 @@ class EvolutionClient:
         
         result = self._make_request("POST", f"/message/sendText/{self.instance_name}", data)
         
-        if "error" not in result:
+        # Handle different response structures
+        has_error = False
+        if isinstance(result, dict):
+            has_error = "error" in result
+        elif isinstance(result, list) and len(result) > 0 and isinstance(result[0], dict):
+            has_error = "error" in result[0]
+        
+        if not has_error:
             print(f"Message sent to {phone}: {text[:50]}...")
             return result
         else:
-            print(f"Failed to send message to {phone}: {result['error']}")
+            error_msg = "Unknown error"
+            if isinstance(result, dict) and "error" in result:
+                error_msg = result["error"]
+            print(f"Failed to send message to {phone}: {error_msg}")
             return result
     
     def send_template(self, phone: str, template_name: str, components: list) -> Dict[str, Any]:
@@ -140,22 +208,42 @@ class EvolutionClient:
     def get_instance_status(self) -> Dict[str, Any]:
         """Get instance connection status"""
         result = self._make_request("GET", f"/instance/connectionState/{self.instance_name}")
-        return result
+        
+        # Normalize response format
+        if isinstance(result, list) and len(result) > 0:
+            return result[0]
+        elif isinstance(result, dict):
+            return result
+        else:
+            return {"error": "Invalid response format"}
     
     def set_webhook(self) -> Dict[str, Any]:
         """Configure webhook to receive incoming messages"""
-        webhook_data = {
-            "url": "http://host.docker.internal:8000/webhook/evolution",
-            "enabled": True,
-            "events": ["messages.upsert"]
+        # Wrap webhook data in "webhook" key as required by Evolution API v2
+        data = {
+            "webhook": {
+                "url": "http://host.docker.internal:8000/webhook/evolution",
+                "enabled": True,
+                "events": ["MESSAGES_UPSERT", "MESSAGES_UPDATE", "SEND_MESSAGE", "CONNECTION_UPDATE"]
+            }
         }
         
-        result = self._make_request("POST", f"/webhook/set/{self.instance_name}", webhook_data)
+        result = self._make_request("POST", f"/webhook/set/{self.instance_name}", data)
         
-        if "error" not in result:
+        # Handle different response structures
+        has_error = False
+        if isinstance(result, dict):
+            has_error = "error" in result
+        elif isinstance(result, list) and len(result) > 0 and isinstance(result[0], dict):
+            has_error = "error" in result[0]
+        
+        if not has_error:
             print(f"Webhook configured for {self.instance_name}")
         else:
-            print(f"Failed to set webhook: {result['error']}")
+            error_msg = "Unknown error"
+            if isinstance(result, dict) and "error" in result:
+                error_msg = result["error"]
+            print(f"Failed to set webhook: {error_msg}")
         
         return result
 

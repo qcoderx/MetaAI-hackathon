@@ -8,6 +8,10 @@ import sys
 import time
 import os
 import docker
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 def check_dependencies():
     """Check if all required dependencies are installed"""
@@ -44,17 +48,27 @@ def check_environment():
     return True
 
 def start_redis():
-    """Start Redis server if not running"""
+    """Check Redis connection (local or cloud)"""
     try:
         import redis
-        r = redis.Redis(host='localhost', port=6379, db=0)
+        redis_url = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
+        
+        if redis_url.startswith('redis://localhost'):
+            # Local Redis
+            r = redis.Redis(host='localhost', port=6379, db=0)
+        else:
+            # Cloud Redis (parse URL)
+            r = redis.from_url(redis_url)
+        
         r.ping()
-        print("✅ Redis is running")
+        print("✅ Redis is connected")
         return True
-    except:
-        print("❌ Redis not running. Please start Redis server:")
-        print("Windows: Download from https://redis.io/download")
-        print("Linux/Mac: sudo service redis-server start")
+    except Exception as e:
+        print(f"❌ Redis connection failed: {e}")
+        if 'localhost' in os.getenv('REDIS_URL', ''):
+            print("Please start local Redis server")
+        else:
+            print("Check your REDIS_URL in .env file")
         return False
 
 def start_evolution_api():

@@ -14,3 +14,7 @@ pillow==10.2.0
 pytesseract==0.3.10
 instaloader==4.10.3
 docker==7.0.0
+beautifulsoup4==4.12.2
+psycopg2-binary==2.9.9
+webdriver-manager==4.0.1
+selenium==4.15.2
