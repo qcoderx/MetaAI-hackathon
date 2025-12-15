@@ -17,6 +17,8 @@ app.conf.update(
     enable_utc=True,
     worker_prefetch_multiplier=1,
     task_acks_late=True,
+    result_expires=600,
+    task_ignore_result=True,
 )
 
 # Import tasks

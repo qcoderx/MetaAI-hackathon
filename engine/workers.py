@@ -161,10 +161,10 @@ def retarget_ghosts_task():
 
 @celery_app.task
 def cleanup_old_prices_task():
-    """Clean up competitor prices older than 30 days"""
+    """Aggressive cleanup for free tier limits"""
     try:
-        cutoff_date = datetime.utcnow() - timedelta(days=30)
-        
+        # Keep prices only for 3 days
+        cutoff_date = datetime.utcnow() - timedelta(days=3)
         with next(get_session()) as session:
             old_prices = session.exec(
                 select(CompetitorPrice)
@@ -177,11 +177,9 @@ def cleanup_old_prices_task():
             
             session.commit()
         
-        print(f"Cleaned up {count} old competitor prices")
-        return {"status": "success", "cleaned_count": count}
-        
+        return {"status": "success", "message": "Database cleaned"}
     except Exception as e:
-        print(f"Cleanup task failed: {e}")
+        print(f"Cleanup failed: {e}")
         return {"status": "error", "message": str(e)}
 
 # Schedule tasks

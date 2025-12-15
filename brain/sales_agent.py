@@ -122,21 +122,23 @@ class SalesAgent:
         }
     
     def _handle_negotiation(self, session: Session, customer: Customer, message: str) -> Dict:
-        """Handle price negotiations with floor price enforcement"""
-        # Extract price from message
-        offered_price = self._extract_price_from_message(message)
-        
-        # Get product context (assume last discussed product)
         product = self._get_conversation_product(session, customer)
-        
         if not product:
-            return {"response": "Which product are you asking about? Please let me know so I can help with pricing."}
+            return {"response": "Which product are you interested in?"}
+
+        # Inject dynamic data (Hidden Floor Price)
+        prompt = SALES_REP_SYSTEM_PROMPT.format(
+            business_name="Naira Sniper Store",
+            product_name=product.name,
+            current_price=f"{product.current_price:,.0f}",
+            floor_price=f"{product.min_negotiable_price:,.0f}", # HIDDEN FROM USER
+            inventory_count=product.inventory_count,
+            history="No history", # Add history logic if available
+            customer_message=message
+        )
         
-        if offered_price and offered_price > 0:
-            return self._negotiate_price(session, customer, product, offered_price, message)
-        else:
-            # General price complaint
-            return self._handle_price_objection(session, customer, product, message)
+        ai_response = self.llama.generate_text(prompt)
+        return {"response": ai_response, "intent": "negotiation"}
     
     def _negotiate_price(self, session: Session, customer: Customer, product: Product, offered_price: float, message: str) -> Dict:
         """Handle specific price negotiations"""

@@ -3,12 +3,18 @@ from sqlmodel import Session, select
 from app.database import get_session
 from app.models import Customer, SalesLog, Product, BusinessConfig
 from brain.sales_agent import SalesAgent
+from brain.profiler import CustomerProfiler
 from engine.notifications import NotificationManager
 from engine.whatsapp_evolution import EvolutionClient
 from pydantic import BaseModel
 from typing import Optional, List, Dict
 from datetime import datetime
 import json
+import redis
+import os
+
+# Redis client for message deduplication
+redis_client = redis.from_url(os.getenv("REDIS_URL", "redis://localhost:6379/0"))
 
 router = APIRouter(prefix="/webhook", tags=["webhooks"])
 
@@ -246,6 +252,20 @@ Ready to sell! 💰"""
 
 async def _handle_message_event(session: Session, data: Dict):
     """Handle incoming message with self-chat admin console logic"""
+    
+    # --- SPAM FIX: MESSAGE DEDUPLICATION ---
+    msg_id = data.get("key", {}).get("id")
+    if msg_id:
+        # Check if ID exists. If not, set it with 60s expiry. If yes, it's spam.
+        try:
+            is_new = redis_client.set(f"msg_dedup:{msg_id}", "1", ex=60, nx=True)
+            if not is_new:
+                print(f"🚫 Duplicate/Spam message ID {msg_id} ignored.")
+                return {"status": "ignored", "reason": "Duplicate message"}
+        except Exception as e:
+            print(f"⚠️ Redis dedup failed: {e}")
+            # Continue processing if Redis fails
+    
     msg = data["message"]
     key = data.get("key", {})
     
@@ -316,32 +336,11 @@ async def _handle_message_event(session: Session, data: Dict):
     print(f"❓ Unknown message type")
     return {"status": "ignored", "reason": "Unknown message type"}
 
-# Rate limiting for admin commands
-last_command_time = {}
+
 
 async def _handle_admin_command(session: Session, business_config: BusinessConfig, command: str):
     """Handle admin commands from owner's self-chat"""
-    import time
-    
-    # Rate limiting - max 1 command per 5 seconds
-    current_time = time.time()
-    owner_phone = business_config.owner_phone
-    
-    if owner_phone in last_command_time:
-        time_diff = current_time - last_command_time[owner_phone]
-        if time_diff < 5:  # 5 second cooldown
-            return {"status": "rate_limited", "message": "Please wait before sending another command"}
-    
-    last_command_time[owner_phone] = current_time
     command_lower = command.lower().strip()
-    
-    # Deduplicate commands - ignore if same as last command
-    last_command_key = f"{owner_phone}_last_cmd"
-    if hasattr(_handle_admin_command, last_command_key):
-        if getattr(_handle_admin_command, last_command_key) == command_lower:
-            return {"status": "duplicate", "message": "Command already processed"}
-    
-    setattr(_handle_admin_command, last_command_key, command_lower)
     
     if command_lower == "stats":
         # Generate quick stats
@@ -390,6 +389,49 @@ Generated: {datetime.now().strftime('%H:%M')}"""
         whatsapp_client.send_message(business_config.owner_phone, "✅ Bot activated. Ready to handle customer inquiries.")
         return {"status": "admin_command", "command": "bot_on"}
     
+    elif command_lower.startswith("add "):
+        # Format: ADD Product Name, Current Price, Floor Price
+        try:
+            raw_data = command[4:].strip()
+            parts = [p.strip() for p in raw_data.split(',')]
+            
+            if len(parts) != 3:
+                raise ValueError("Format: ADD Name, Price, Floor")
+                
+            name = parts[0]
+            current_price = float(parts[1])
+            floor_price = float(parts[2])
+            
+            if floor_price > current_price:
+                raise ValueError("Floor price cannot be higher than current price")
+
+            # Create Product
+            from app.models import Product
+            new_product = Product(
+                name=name,
+                model="Standard",
+                current_price=current_price,
+                min_negotiable_price=floor_price, 
+                inventory_count=10
+            )
+            session.add(new_product)
+            session.commit()
+            
+            msg = f"✅ Product Added!\n\n📱 {name}\n💰 Price: ₦{current_price:,.0f}\n🛡️ Floor: ₦{floor_price:,.0f}"
+            whatsapp_client = EvolutionClient()
+            import time
+            time.sleep(2)
+            whatsapp_client.send_message(business_config.owner_phone, msg)
+            return {"status": "success", "message": "Product added"}
+
+        except Exception as e:
+            whatsapp_client = EvolutionClient()
+            error_msg = f"❌ Error adding product.\nFormat: ADD Name, Price, Floor\nError: {str(e)}"
+            import time
+            time.sleep(2)
+            whatsapp_client.send_message(business_config.owner_phone, error_msg)
+            return {"status": "error", "message": str(e)}
+    
     elif command_lower.startswith("confirm ") or command_lower.startswith("cancel "):
         # Handle order commands
         notification_manager = NotificationManager()
@@ -404,8 +446,11 @@ Generated: {datetime.now().strftime('%H:%M')}"""
 
 • STATS - View business statistics
 • BOT ON/OFF - Control bot activity
+• ADD Name, Price, Floor - Add product
 • CONFIRM [order_id] - Approve orders
 • CANCEL [order_id] - Cancel orders
+
+Example: ADD iPhone 14, 450000, 400000
 
 Send any command to this chat (Note to Self)."""
         
