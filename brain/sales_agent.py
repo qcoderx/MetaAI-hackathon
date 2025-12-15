@@ -126,54 +126,38 @@ class SalesAgent:
         if not product:
             return {"response": "Which product are you interested in?"}
 
-        # Inject dynamic data (Hidden Floor Price)
-        prompt = SALES_REP_SYSTEM_PROMPT.format(
-            business_name="Naira Sniper Store",
-            product_name=product.name,
-            current_price=f"{product.current_price:,.0f}",
-            floor_price=f"{product.min_negotiable_price:,.0f}", # HIDDEN FROM USER
-            inventory_count=product.inventory_count,
-            history="No history", # Add history logic if available
-            customer_message=message
-        )
+        # Extract price from message
+        offered_price = self._extract_price_from_message(message)
         
-        ai_response = self.llama.generate_text(prompt)
-        return {"response": ai_response, "intent": "negotiation"}
+        if offered_price and offered_price > 0:
+            # Use Python logic for price enforcement
+            return self._negotiate_price(session, customer, product, offered_price, message)
+        else:
+            # General price complaint - use AI but without floor price in prompt
+            prompt = f"""You are a Nigerian phone retailer. Customer says: "{message}" about {product.name} (₦{product.current_price:,.0f}). 
+            Defend the value and ask for their budget. Keep it short and Nigerian style."""
+            
+            ai_response = self.llama.generate_text(prompt)
+            return {"response": ai_response or "What's your budget? I can work with you.", "intent": "negotiation"}
     
     def _negotiate_price(self, session: Session, customer: Customer, product: Product, offered_price: float, message: str) -> Dict:
-        """Handle specific price negotiations"""
+        """Handle specific price negotiations with Python floor price enforcement"""
         
         if offered_price >= product.min_negotiable_price:
             # Accept offer
-            response = f"Deal! ₦{offered_price:,.0f} is acceptable. Let's proceed with your order.\n\nI'll need:\n1. Your full name\n2. Delivery address\n3. Preferred delivery method"
-            
-            return {
-                "response": response,
-                "negotiated_price": offered_price,
-                "status": "accepted",
-                "next_step": "order_taking"
-            }
+            response = f"Deal! ₦{offered_price:,.0f} works. Let me get your delivery details."
+            return {"response": response, "status": "accepted", "negotiated_price": offered_price}
         
         elif offered_price >= product.min_negotiable_price * 0.9:
             # Counter-offer slightly above floor
             counter_price = product.min_negotiable_price + 500
-            response = f"I understand budget is important. My best price is ₦{counter_price:,.0f} - that's really the lowest I can go while maintaining quality. Deal?"
-            
-            return {
-                "response": response,
-                "counter_price": counter_price,
-                "status": "counter_offer"
-            }
+            response = f"I hear you. My final price is ₦{counter_price:,.0f} - that's the lowest I can go for quality. Deal?"
+            return {"response": response, "status": "counter_offer", "counter_price": counter_price}
         
         else:
-            # Reject politely and reinforce value
-            response = f"I appreciate your offer of ₦{offered_price:,.0f}, but I can't go that low and maintain the quality you deserve. At ₦{product.current_price:,.0f}, you're getting genuine product with full warranty. That's real value!"
-            
-            return {
-                "response": response,
-                "status": "rejected",
-                "reason": "below_floor_price"
-            }
+            # Reject - too low
+            response = f"₦{offered_price:,.0f} is too low for original quality. My best price is ₦{product.min_negotiable_price:,.0f}. Worth it for genuine product."
+            return {"response": response, "status": "rejected", "floor_price": product.min_negotiable_price}
     
     def _handle_order_creation(self, session: Session, customer: Customer, message: str) -> Dict:
         """Handle order creation process"""
@@ -220,22 +204,24 @@ class SalesAgent:
         }
     
     def _handle_general_inquiry(self, session: Session, customer: Customer, message: str) -> Dict:
-        """Handle general inquiries with AI assistance"""
+        """Handle general inquiries with AI assistance - NO FLOOR PRICE IN PROMPT"""
         
-        prompt = SALES_REP_SYSTEM_PROMPT.format(
-            customer_message=message,
-            business_context="Nigerian phone retailer with competitive prices and genuine products"
-        )
+        product = self._get_conversation_product(session, customer)
+        
+        if product:
+            # Safe prompt without floor price
+            prompt = f"""You are a Nigerian phone retailer. Customer says: "{message}" 
+            Product: {product.name} - ₦{product.current_price:,.0f} ({product.inventory_count} in stock)
+            Respond professionally, highlight value, ask for the sale. Keep it short."""
+        else:
+            prompt = f"You are a Nigerian phone retailer. Customer says: '{message}'. Respond professionally and ask what they need."
         
         ai_response = self.llama.generate_text(prompt)
         
         if not ai_response:
             ai_response = "Hello! Welcome to our store. We have the best phones at great prices. What are you looking for today?"
         
-        return {
-            "response": ai_response,
-            "intent": "general_inquiry"
-        }
+        return {"response": ai_response, "intent": "general_inquiry"}
     
     def _create_order(self, session: Session, customer: Customer, message: str) -> Dict:
         """Create confirmed order and return order details"""
@@ -319,14 +305,16 @@ class SalesAgent:
         return session.exec(query).all()
     
     def _extract_price_from_message(self, message: str) -> Optional[float]:
-        """Extract price from customer message"""
+        """Extract price from customer message - FIX BUG 3: Find largest number, not first"""
         # Look for patterns like "15000", "15,000", "₦15000"
         price_pattern = r'₦?(\d{1,3}(?:,\d{3})*|\d+)'
         matches = re.findall(price_pattern, message.replace(',', ''))
         
         if matches:
             try:
-                return float(matches[0].replace(',', ''))
+                # Convert all matches to numbers and return the largest (likely the price)
+                numbers = [float(match.replace(',', '')) for match in matches]
+                return max(numbers)  # Return largest number, not first
             except ValueError:
                 pass
         

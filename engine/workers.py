@@ -161,23 +161,19 @@ def retarget_ghosts_task():
 
 @celery_app.task
 def cleanup_old_prices_task():
-    """Aggressive cleanup for free tier limits"""
+    """Aggressive cleanup for free tier limits - FIXED: Bulk delete"""
     try:
         # Keep prices only for 3 days
         cutoff_date = datetime.utcnow() - timedelta(days=3)
         with next(get_session()) as session:
-            old_prices = session.exec(
-                select(CompetitorPrice)
-                .where(CompetitorPrice.scraped_at < cutoff_date)
-            ).all()
-            
-            count = len(old_prices)
-            for price in old_prices:
-                session.delete(price)
-            
+            # Bulk delete - no memory loading
+            from sqlmodel import delete
+            stmt = delete(CompetitorPrice).where(CompetitorPrice.scraped_at < cutoff_date)
+            result = session.exec(stmt)
             session.commit()
+            count = result.rowcount
         
-        return {"status": "success", "message": "Database cleaned"}
+        return {"status": "success", "message": f"Deleted {count} old prices"}
     except Exception as e:
         print(f"Cleanup failed: {e}")
         return {"status": "error", "message": str(e)}

@@ -33,8 +33,18 @@ class PricingAgent:
         tier2_prices = [p for p in prices if p.tier == DataTier.TIER_2_MARKET]
         tier3_prices = [p for p in prices if p.tier == DataTier.TIER_3_NOISE]
         
-        # Check surge mode - all Tier 1 out of stock
-        surge_mode = len(tier1_prices) > 0 and all(p.is_out_of_stock for p in tier1_prices)
+        # Check surge mode - FIXED: Handle scraper failures
+        # If no tier1 data AND no recent scraping activity, assume surge
+        if len(tier1_prices) == 0:
+            # Check if we have ANY recent price data (last 6 hours)
+            from datetime import timedelta
+            recent_cutoff = datetime.utcnow() - timedelta(hours=6)
+            recent_prices = [p for p in prices if p.scraped_at > recent_cutoff]
+            # If no recent data, assume scrapers are blocked = potential surge
+            surge_mode = len(recent_prices) == 0
+        else:
+            # Normal logic: all tier1 out of stock
+            surge_mode = all(p.is_out_of_stock for p in tier1_prices)
         
         # Calculate market price
         market_price = 0
@@ -72,11 +82,11 @@ class PricingAgent:
         
         customer_type = customer.customer_type if customer else CustomerType.UNKNOWN
         
-        # Build arbitrage context for Llama 3
+        # Build arbitrage context for Llama 3 - NO FLOOR PRICE
         prompt = ARBITRAGE_ANALYST_PROMPT.format(
             product_name=product.name,
             current_price=product.current_price,
-            floor_price=product.floor_price,
+            floor_price="CONFIDENTIAL",  # Don't expose real floor price
             market_price=market_intel["market_price"],
             surge_mode=market_intel["surge_mode"],
             trusted_competitors=str(market_intel["trusted_competitors"][:3]),
@@ -93,8 +103,8 @@ class PricingAgent:
         
         # Validate floor price constraint
         recommended_price = ai_decision.get("recommended_price", product.current_price)
-        if recommended_price < product.floor_price:
-            recommended_price = product.floor_price
+        if recommended_price < product.min_negotiable_price:
+            recommended_price = product.min_negotiable_price
             ai_decision["reasoning"] += " (Floor price enforced)"
         
         # Generate flash liquidity code if offering discount
@@ -154,7 +164,7 @@ class PricingAgent:
         
         market_price = market_intel["market_price"]
         if market_price and market_price < product.current_price:
-            target_price = max(market_price - 500, product.floor_price)
+            target_price = max(market_price - 500, product.min_negotiable_price)
             return {
                 "strategy": "match_offer",
                 "recommended_price": target_price,
