@@ -30,11 +30,26 @@ class CustomerProfiler:
         return self._keyword_classify(message)
     
     def _keyword_classify(self, message: str) -> dict:
-        """Fallback keyword-based classification"""
+        """Context-aware keyword classification - FIX BUG 14"""
         message_lower = message.lower()
+        
+        # Check for negative context that flips meaning
+        negative_words = ['hate', 'expensive', 'too much', 'cheap', 'dont want', 'not interested']
+        has_negative = any(neg in message_lower for neg in negative_words)
         
         price_score = sum(1 for kw in self.price_keywords if kw in message_lower)
         quality_score = sum(1 for kw in self.quality_keywords if kw in message_lower)
+        
+        # If negative context + premium brand mention = price sensitive
+        premium_brands = ['iphone', 'samsung galaxy s', 'macbook']
+        has_premium = any(brand in message_lower for brand in premium_brands)
+        
+        if has_negative and has_premium:
+            return {
+                "customer_type": "price_sensitive",
+                "confidence": 0.8,
+                "key_signals": ["negative_premium_context"]
+            }
         
         if price_score > quality_score:
             return {

@@ -465,7 +465,7 @@ async def _handle_customer_message(session: Session, phone: str, text: str, cust
     try:
         sales_agent = SalesAgent()
         
-        # Process message
+        # Process message - NO HARDCODED PRODUCT ID
         agent_response = sales_agent.process_message(
             session=session,
             customer_phone=phone,

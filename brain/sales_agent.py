@@ -23,6 +23,7 @@ class SalesAgent:
     
     def __init__(self):
         self.llama = LlamaClient()
+        self.conversation_history = []
     
     def process_message(
         self,
@@ -36,8 +37,14 @@ class SalesAgent:
         # Get or create customer
         customer = self._get_or_create_customer(session, customer_phone)
         
+        # CURE ALZHEIMER'S: Load conversation history from database
+        self.conversation_history = self._load_conversation_history(session, customer.id)
+        
+        # Log incoming message
+        self._log_message(session, customer.id, message_text, is_from_customer=True)
+        
         # Analyze message intent
-        intent = self._analyze_intent(message_text, conversation_history or [])
+        intent = self._analyze_intent(message_text, self.conversation_history)
         
         # Route to appropriate handler
         if intent == "catalog_search":
@@ -64,6 +71,45 @@ class SalesAgent:
             session.refresh(customer)
         
         return customer
+    
+    def _load_conversation_history(self, session: Session, customer_id: int) -> List[Dict]:
+        """Load recent conversation history from database"""
+        from app.models import ConversationLog
+        from datetime import timedelta
+        
+        # Load last 10 messages from past 24 hours
+        cutoff = datetime.utcnow() - timedelta(hours=24)
+        logs = session.exec(
+            select(ConversationLog)
+            .where(ConversationLog.customer_id == customer_id)
+            .where(ConversationLog.created_at > cutoff)
+            .order_by(ConversationLog.created_at.desc())
+            .limit(10)
+        ).all()
+        
+        history = []
+        for log in reversed(logs):  # Reverse to get chronological order
+            history.append({
+                "message": log.message,
+                "is_from_customer": log.is_from_customer,
+                "timestamp": log.created_at,
+                "product_id": log.product_id
+            })
+        
+        return history
+    
+    def _log_message(self, session: Session, customer_id: int, message: str, is_from_customer: bool, product_id: Optional[int] = None):
+        """Log message to conversation history"""
+        from app.models import ConversationLog
+        
+        log = ConversationLog(
+            customer_id=customer_id,
+            message=message,
+            is_from_customer=is_from_customer,
+            product_id=product_id
+        )
+        session.add(log)
+        session.commit()
     
     def _analyze_intent(self, message: str, history: List[Dict]) -> str:
         """Analyze customer message intent using keywords and context"""
@@ -115,8 +161,11 @@ class SalesAgent:
         
         response_parts.append("\nWhich one interests you? I can give you more details!")
         
+        response = "\n".join(response_parts)
+        self._log_message(session, customer.id, response, is_from_customer=False)
+        
         return {
-            "response": "\n".join(response_parts),
+            "response": response,
             "products": product_list,
             "intent": "catalog_search"
         }
@@ -138,7 +187,9 @@ class SalesAgent:
             Defend the value and ask for their budget. Keep it short and Nigerian style."""
             
             ai_response = self.llama.generate_text(prompt)
-            return {"response": ai_response or "What's your budget? I can work with you.", "intent": "negotiation"}
+            response = ai_response or "What's your budget? I can work with you."
+            self._log_message(session, customer.id, response, is_from_customer=False, product_id=product.id)
+            return {"response": response, "intent": "negotiation"}
     
     def _negotiate_price(self, session: Session, customer: Customer, product: Product, offered_price: float, message: str) -> Dict:
         """Handle specific price negotiations with Python floor price enforcement"""
@@ -146,17 +197,20 @@ class SalesAgent:
         if offered_price >= product.min_negotiable_price:
             # Accept offer
             response = f"Deal! ₦{offered_price:,.0f} works. Let me get your delivery details."
+            self._log_message(session, customer.id, response, is_from_customer=False, product_id=product.id)
             return {"response": response, "status": "accepted", "negotiated_price": offered_price}
         
         elif offered_price >= product.min_negotiable_price * 0.9:
             # Counter-offer slightly above floor
             counter_price = product.min_negotiable_price + 500
             response = f"I hear you. My final price is ₦{counter_price:,.0f} - that's the lowest I can go for quality. Deal?"
+            self._log_message(session, customer.id, response, is_from_customer=False, product_id=product.id)
             return {"response": response, "status": "counter_offer", "counter_price": counter_price}
         
         else:
             # Reject - too low
             response = f"₦{offered_price:,.0f} is too low for original quality. My best price is ₦{product.min_negotiable_price:,.0f}. Worth it for genuine product."
+            self._log_message(session, customer.id, response, is_from_customer=False, product_id=product.id)
             return {"response": response, "status": "rejected", "floor_price": product.min_negotiable_price}
     
     def _handle_order_creation(self, session: Session, customer: Customer, message: str) -> Dict:
@@ -221,6 +275,7 @@ class SalesAgent:
         if not ai_response:
             ai_response = "Hello! Welcome to our store. We have the best phones at great prices. What are you looking for today?"
         
+        self._log_message(session, customer.id, ai_response, is_from_customer=False)
         return {"response": ai_response, "intent": "general_inquiry"}
     
     def _create_order(self, session: Session, customer: Customer, message: str) -> Dict:
@@ -261,6 +316,9 @@ class SalesAgent:
         session.commit()
         
         response = f"✅ Order confirmed!\n\nOrder #{order.id}\n{product.name} - ₦{product.current_price:,.0f}\n\nDelivery: {delivery_info.get('address', 'Address provided')}\n\nYou'll receive delivery updates on this number. Thank you for your business!"
+        
+        # Log bot response
+        self._log_message(session, customer.id, response, is_from_customer=False, product_id=product.id)
         
         return {
             "response": response,
@@ -321,9 +379,26 @@ class SalesAgent:
         return None
     
     def _get_conversation_product(self, session: Session, customer: Customer) -> Optional[Product]:
-        """Get the product being discussed (simplified - would use conversation context in production)"""
-        # For now, return the first available product
-        # In production, this would track conversation state
+        """Get the product being discussed from conversation history"""
+        # Check recent conversation for product mentions
+        for msg in reversed(self.conversation_history[-5:]):  # Last 5 messages
+            if msg.get('product_id'):
+                product = session.get(Product, msg['product_id'])
+                if product and product.inventory_count > 0:
+                    return product
+        
+        # Extract product from current conversation keywords
+        keywords = []
+        for msg in self.conversation_history[-3:]:
+            if msg.get('is_from_customer', True):
+                keywords.extend(self._extract_product_keywords(msg['message']))
+        
+        if keywords:
+            products = self._search_products(session, keywords)
+            if products:
+                return products[0]
+        
+        # Fallback: return first available product
         return session.exec(select(Product).where(Product.inventory_count > 0)).first()
     
     def _has_delivery_info(self, message: str) -> bool:

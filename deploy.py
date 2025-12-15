@@ -14,14 +14,12 @@ from dotenv import load_dotenv
 load_dotenv()
 
 def check_dependencies():
-    """Check if all required dependencies are installed"""
+    """Check if all required dependencies are installed - FIX BUG 16"""
     try:
         import requests
-        import celery
-        import redis
-        import instaloader
-        import playwright
-        print("✅ All dependencies installed")
+        import redis  # Safe import
+        # Don't import celery here - it might try to connect immediately
+        print("✅ Core dependencies installed")
         return True
     except ImportError as e:
         print(f"❌ Missing dependency: {e}")
@@ -110,14 +108,21 @@ def start_api_server():
     ])
 
 def start_celery_worker():
-    """Start Celery worker"""
+    """Start Celery worker - FIX BUG 16: Safe import after Redis is ready"""
     print("🔧 Starting Celery worker...")
+    # Now safe to import since Redis is confirmed running
+    try:
+        from engine.workers import celery_app
+        print("✅ Celery imports successful")
+    except Exception as e:
+        print(f"⚠️ Celery import warning: {e}")
+    
     return subprocess.Popen([
         "celery", "-A", "engine.workers", "worker", "--loglevel=info"
     ])
 
 def start_celery_beat():
-    """Start Celery beat scheduler"""
+    """Start Celery beat scheduler - FIX BUG 16: Safe import after Redis is ready"""
     print("⏰ Starting Celery scheduler...")
     return subprocess.Popen([
         "celery", "-A", "engine.workers", "beat", "--loglevel=info"

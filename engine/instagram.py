@@ -41,14 +41,15 @@ class InstagramCompetitorMonitor:
                 if post.date < cutoff_date:
                     break
                 
-                # Download post image to temp directory
-                with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as tmp_file:
-                    try:
-                        self.loader.download_pic(tmp_file.name, post.url, post.date)
-                        image_paths.append(tmp_file.name)
-                    except Exception as e:
-                        print(f"Error downloading image: {e}")
-                        continue
+                # Download post image to temp directory with unique name
+                import uuid
+                temp_filename = f"temp_ig_{uuid.uuid4().hex[:8]}.jpg"
+                try:
+                    self.loader.download_pic(temp_filename, post.url, post.date)
+                    image_paths.append(temp_filename)
+                except Exception as e:
+                    print(f"Error downloading image: {e}")
+                    continue
         
         except Exception as e:
             print(f"Error fetching Instagram posts for {username}: {e}")

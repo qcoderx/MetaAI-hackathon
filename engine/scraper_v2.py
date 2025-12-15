@@ -84,7 +84,12 @@ class JijiScraper:
         return prices
     
     def _extract_price(self, price_text: str) -> Optional[float]:
-        """Extract numeric price from text"""
+        """Extract numeric price from text - FIX BUG 15: Handle 'Call for Price'"""
+        # Check for 'call for price' patterns first
+        call_patterns = ['call', 'contact', 'enquire', 'ask for price', 'price on request']
+        if any(pattern in price_text.lower() for pattern in call_patterns):
+            return None  # Don't treat as 0.0 or out of stock
+        
         price_clean = re.sub(r'[₦,\s]', '', price_text)
         numbers = re.findall(r'\d+', price_clean)
         
@@ -172,7 +177,12 @@ class JumiaScraper:
         return prices
     
     def _extract_price(self, price_text: str) -> Optional[float]:
-        """Extract numeric price from text"""
+        """Extract numeric price from text - FIX BUG 15: Handle 'Call for Price'"""
+        # Check for 'call for price' patterns first
+        call_patterns = ['call', 'contact', 'enquire', 'ask for price', 'price on request']
+        if any(pattern in price_text.lower() for pattern in call_patterns):
+            return None  # Don't treat as 0.0 or out of stock
+        
         price_clean = re.sub(r'[₦,\s]', '', price_text)
         numbers = re.findall(r'\d+', price_clean)
         

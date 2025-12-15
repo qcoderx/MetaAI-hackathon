@@ -105,6 +105,14 @@ class BusinessConfig(SQLModel, table=True):
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
+class ConversationLog(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    customer_id: int = Field(foreign_key="customer.id")
+    message: str
+    is_from_customer: bool = Field(default=True)
+    product_id: Optional[int] = Field(default=None, foreign_key="product.id")
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
 class PricingDecision(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     product_id: int = Field(foreign_key="product.id")
