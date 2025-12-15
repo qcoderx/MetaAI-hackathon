@@ -194,7 +194,7 @@ async def _handle_connection_open(session: Session):
             business_config = BusinessConfig(
                 ntfy_topic=ntfy_topic,
                 bot_active=True,
-                business_name="Naira Sniper Store",
+                business_name="Store",
                 is_setup_complete=False
             )
             session.add(business_config)
@@ -331,7 +331,16 @@ async def _handle_message_event(session: Session, data: Dict):
             print(f"🚫 Bot is inactive")
             return {"status": "ignored", "reason": "Bot is inactive"}
         
-        return await _handle_customer_message(session, phone, text, push_name)
+        # 1. FETCH HISTORY (Last 10 messages)
+        history_key = f"history:{phone}"
+        try:
+            raw_history = redis_client.lrange(history_key, 0, 9)
+            conversation_history = [json.loads(msg) for msg in raw_history][::-1] # Reverse to chronological
+        except Exception as e:
+            print(f"⚠️ Redis history fetch failed: {e}")
+            conversation_history = []
+        
+        return await _handle_customer_message(session, phone, text, push_name, conversation_history)
     
     print(f"❓ Unknown message type")
     return {"status": "ignored", "reason": "Unknown message type"}
@@ -460,17 +469,17 @@ Send any command to this chat (Note to Self)."""
         whatsapp_client.send_message(business_config.owner_phone, help_msg)
         return {"status": "admin_command", "command": "help"}
 
-async def _handle_customer_message(session: Session, phone: str, text: str, customer_name: str):
+async def _handle_customer_message(session: Session, phone: str, text: str, customer_name: str, conversation_history: list = None):
     """Handle customer message with Sales Agent"""
     try:
         sales_agent = SalesAgent()
         
-        # Process message - NO HARDCODED PRODUCT ID
+        # 2. PROCESS WITH HISTORY
         agent_response = sales_agent.process_message(
             session=session,
             customer_phone=phone,
             message_text=text,
-            conversation_history=[]
+            conversation_history=conversation_history or []
         )
         
         # Send response back to customer
@@ -486,6 +495,27 @@ async def _handle_customer_message(session: Session, phone: str, text: str, cust
                 response_sent = "error" not in send_result
             except Exception as e:
                 print(f"Failed to send WhatsApp response: {e}")
+        
+        # 3. SAVE NEW CONTEXT (User + Bot)
+        history_key = f"history:{phone}"
+        try:
+            # Store User Msg
+            redis_client.lpush(history_key, json.dumps({"role": "user", "content": text}))
+            # Store Bot Msg (if sent)
+            if agent_response.get("response"):
+                redis_client.lpush(history_key, json.dumps({"role": "assistant", "content": agent_response["response"]}))
+                # Trim to 10 items to save space
+                redis_client.ltrim(history_key, 0, 9)
+        except Exception as e:
+            print(f"⚠️ Redis history save failed: {e}")
+        
+        # Handle session end (Smart Sleep)
+        if agent_response.get("status") == "session_end":
+            print(f"💤 AI decided to sleep for {phone}")
+            try:
+                redis_client.delete(history_key)
+            except Exception as e:
+                print(f"⚠️ Redis delete failed: {e}")
         
         # Handle order creation alerts
         if agent_response.get("status") == "order_created":

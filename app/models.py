@@ -100,7 +100,7 @@ class BusinessConfig(SQLModel, table=True):
     owner_phone: Optional[str] = Field(default=None, unique=True)
     ntfy_topic: Optional[str] = None
     bot_active: bool = Field(default=True)
-    business_name: str = Field(default="Naira Sniper")
+    business_name: str = Field(default="Store")
     is_setup_complete: bool = Field(default=False)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)

@@ -120,11 +120,11 @@ class SalesAgent:
             return "order_creation"
         
         # Negotiation signals
-        if any(word in message_lower for word in ["price", "expensive", "cheaper", "discount", "reduce"]):
+        if any(word in message_lower for word in ["price", "expensive", "cheaper", "discount", "reduce", "how much"]):
             return "negotiation"
         
-        # Catalog search signals
-        if any(word in message_lower for word in ["do you have", "available", "stock", "iphone", "samsung"]):
+        # Catalog search signals - EXPANDED
+        if any(word in message_lower for word in ["do you have", "available", "stock", "selling", "iphone", "samsung", "phone", "mobile"]):
             return "catalog_search"
         
         # Objection signals
@@ -188,6 +188,17 @@ class SalesAgent:
             
             ai_response = self.llama.generate_text(prompt)
             response = ai_response or "What's your budget? I can work with you."
+            
+            # TASK 2: Smart Sleep Detection
+            if "ACTION: SLEEP" in response:
+                final_response = response.replace("ACTION: SLEEP", "").strip()
+                self._log_message(session, customer.id, final_response, is_from_customer=False, product_id=product.id)
+                return {
+                    "response": final_response,
+                    "status": "session_end",
+                    "intent": "casual_termination"
+                }
+            
             self._log_message(session, customer.id, response, is_from_customer=False, product_id=product.id)
             return {"response": response, "intent": "negotiation"}
     
@@ -263,10 +274,22 @@ class SalesAgent:
         product = self._get_conversation_product(session, customer)
         
         if product:
-            # Safe prompt without floor price
-            prompt = f"""You are a Nigerian phone retailer. Customer says: "{message}" 
-            Product: {product.name} - ₦{product.current_price:,.0f} ({product.inventory_count} in stock)
-            Respond professionally, highlight value, ask for the sale. Keep it short."""
+            # Use Einstein prompt with context
+            history_text = "\n".join([f"{h.get('role', 'user')}: {h.get('content', h.get('message', ''))}" for h in self.conversation_history[-3:]])
+            # Get business name from config
+            from app.models import BusinessConfig
+            business_config = session.exec(select(BusinessConfig)).first()
+            business_name = business_config.business_name if business_config else "Store"
+            
+            prompt = SALES_REP_SYSTEM_PROMPT.format(
+                business_name=business_name,
+                product_name=product.name,
+                current_price=f"{product.current_price:,.0f}",
+                floor_price=f"{product.min_negotiable_price:,.0f}",
+                inventory_count=product.inventory_count,
+                history=history_text or "No previous conversation",
+                customer_message=message
+            )
         else:
             prompt = f"You are a Nigerian phone retailer. Customer says: '{message}'. Respond professionally and ask what they need."
         
@@ -274,6 +297,16 @@ class SalesAgent:
         
         if not ai_response:
             ai_response = "Hello! Welcome to our store. We have the best phones at great prices. What are you looking for today?"
+        
+        # TASK 2: Smart Sleep Detection
+        if "ACTION: SLEEP" in ai_response:
+            final_response = ai_response.replace("ACTION: SLEEP", "").strip()
+            self._log_message(session, customer.id, final_response, is_from_customer=False)
+            return {
+                "response": final_response,
+                "status": "session_end",
+                "intent": "casual_termination"
+            }
         
         self._log_message(session, customer.id, ai_response, is_from_customer=False)
         return {"response": ai_response, "intent": "general_inquiry"}
@@ -334,33 +367,46 @@ class SalesAgent:
         message_lower = message.lower()
         
         # Common phone brands and models
-        brands = ["iphone", "samsung", "huawei", "xiaomi", "tecno", "infinix", "oppo", "vivo"]
+        brands = ["iphone", "samsung", "huawei", "xiaomi", "tecno", "infinix", "oppo", "vivo", "phone", "mobile"]
         for brand in brands:
             if brand in message_lower:
                 keywords.append(brand)
         
-        # Extract model numbers
-        model_pattern = r'\b\d+[a-z]*\b'
+        # Extract model numbers (iPhone 13, Samsung S23, etc)
+        model_pattern = r'\b(\d+[a-z]*|pro|max|plus|mini)\b'
         models = re.findall(model_pattern, message_lower)
         keywords.extend(models)
+        
+        # Add selling/buying keywords
+        if any(word in message_lower for word in ['selling', 'buy', 'price', 'cost', 'how much']):
+            keywords.append('product_inquiry')
         
         return keywords
     
     def _search_products(self, session: Session, keywords: List[str]) -> List[Product]:
         """Search products by keywords"""
         if not keywords:
-            return []
+            # Return all available products if no keywords
+            return session.exec(select(Product).where(Product.inventory_count > 0)).all()
         
-        query = select(Product).where(Product.inventory_count > 0)
-        
-        # Add keyword filters
+        # Try to match any keyword (OR logic, not AND)
+        from sqlmodel import or_
+        conditions = []
         for keyword in keywords:
-            query = query.where(
-                (Product.name.ilike(f"%{keyword}%")) | 
-                (Product.model.ilike(f"%{keyword}%"))
-            )
+            if keyword != 'product_inquiry':  # Skip generic keywords
+                conditions.extend([
+                    Product.name.ilike(f"%{keyword}%"),
+                    Product.model.ilike(f"%{keyword}%")
+                ])
         
-        return session.exec(query).all()
+        if conditions:
+            query = select(Product).where(Product.inventory_count > 0).where(or_(*conditions))
+            results = session.exec(query).all()
+            if results:
+                return results
+        
+        # Fallback: return all available products
+        return session.exec(select(Product).where(Product.inventory_count > 0)).all()
     
     def _extract_price_from_message(self, message: str) -> Optional[float]:
         """Extract price from customer message - FIX BUG 3: Find largest number, not first"""
@@ -391,14 +437,14 @@ class SalesAgent:
         keywords = []
         for msg in self.conversation_history[-3:]:
             if msg.get('is_from_customer', True):
-                keywords.extend(self._extract_product_keywords(msg['message']))
+                keywords.extend(self._extract_product_keywords(msg.get('message', msg.get('content', ''))))
         
         if keywords:
             products = self._search_products(session, keywords)
             if products:
                 return products[0]
         
-        # Fallback: return first available product
+        # Return ANY available product if customer is asking about products
         return session.exec(select(Product).where(Product.inventory_count > 0)).first()
     
     def _has_delivery_info(self, message: str) -> bool:

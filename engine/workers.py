@@ -83,80 +83,69 @@ def scrape_instagram_task():
 
 @celery_app.task
 def retarget_ghosts_task():
-    """Retarget customers who inquired but didn't purchase"""
+    """Smart Nudge for abandoned conversations"""
     try:
-        print("Starting ghost retargeting task...")
+        print("Starting smart ghost retargeting...")
         
-        # Find customers who inquired > 24 hours ago but didn't purchase
-        cutoff_time = datetime.utcnow() - timedelta(hours=24)
+        # Find sessions that haven't updated in 30 mins but are recent (within 2 hours)
+        cutoff = datetime.utcnow() - timedelta(minutes=30)
+        recent_cutoff = datetime.utcnow() - timedelta(hours=2)
         
         with next(get_session()) as session:
-            # Query for ghost customers
-            ghost_inquiries = session.exec(
+            # Find recent inquiries with no purchase
+            ghosts = session.exec(
                 select(SalesLog)
-                .where(SalesLog.inquiry_date < cutoff_time)
+                .where(SalesLog.inquiry_date < cutoff)
                 .where(SalesLog.purchased == False)
-                .where(SalesLog.inquiry_date > datetime.utcnow() - timedelta(days=7))  # Within last 7 days
+                .where(SalesLog.inquiry_date > recent_cutoff)
             ).all()
             
-            agent = PricingAgent()
-            evolution_client = EvolutionClient()
             messages_sent = 0
             
-            for inquiry in ghost_inquiries:
+            for ghost in ghosts:
                 try:
-                    # Get customer and product
-                    customer = session.get(Customer, inquiry.customer_id)
-                    product = session.get(Product, inquiry.product_id)
+                    customer = session.get(Customer, ghost.customer_id)
+                    product = session.get(Product, ghost.product_id)
                     
-                    if not customer or not product:
+                    if not customer or not product or not customer.phone:
                         continue
                     
-                    # Skip if customer has no phone
-                    if not customer.phone:
-                        continue
+                    # Get Chat History from Redis to see what we last said
+                    import redis
+                    import os
+                    redis_client = redis.from_url(os.getenv("REDIS_URL", "redis://localhost:6379/0"))
+                    history_key = f"history:{customer.phone}"
                     
-                    # Get AI pricing decision
-                    decision = agent.make_pricing_decision(session, product, customer)
+                    try:
+                        last_msg = redis_client.lindex(history_key, 0)
+                        has_history = last_msg is not None
+                    except:
+                        has_history = False
                     
-                    # Send appropriate message based on strategy
-                    success = False
-                    if decision["strategy"] == "price_drop":
-                        from brain.prompts import PRICE_DROP_TEMPLATE
-                        message = PRICE_DROP_TEMPLATE.format(
-                            customer_name=customer.name or "Customer",
-                            product_name=product.name,
-                            new_price=f"{decision['recommended_price']:,.0f}",
-                            old_price=f"{product.current_price:,.0f}",
-                            hours=4
-                        )
-                        result = evolution_client.send_message(customer.phone, message)
-                        success = "error" not in result
-                    else:  # value_reinforcement
-                        from brain.prompts import VALUE_REINFORCEMENT_TEMPLATE
-                        message = VALUE_REINFORCEMENT_TEMPLATE.format(
-                            customer_name=customer.name or "Customer",
-                            product_name=product.name,
-                            price=f"{product.current_price:,.0f}",
-                            model_year="2024",
-                            warranty="6-month",
-                            extra_value="Free delivery within Lagos"
-                        )
-                        result = evolution_client.send_message(customer.phone, message)
-                        success = "error" not in result
+                    if has_history:
+                        # Context-aware nudge
+                        msg = f"Still interested in the {product.name}? ₦{product.current_price:,.0f}. Available now."
+                    else:
+                        # Generic nudge  
+                        msg = f"Hello! The {product.name} is available. ₦{product.current_price:,.0f}. Let me know if interested."
                     
-                    if success:
+                    # Send via WhatsApp
+                    from engine.whatsapp_evolution import EvolutionClient
+                    client = EvolutionClient()
+                    result = client.send_message(customer.phone, msg)
+                    
+                    if "error" not in result:
                         messages_sent += 1
-                        print(f"Retargeted {customer.phone} for {product.name} with {decision['strategy']}")
+                        print(f"👻 Nudged {customer.phone}")
                     
                 except Exception as e:
-                    print(f"Error retargeting customer {inquiry.customer_id}: {e}")
+                    print(f"Error nudging customer {ghost.customer_id}: {e}")
         
-        print(f"Ghost retargeting completed. Messages sent: {messages_sent}")
+        print(f"Smart ghost retargeting completed. Messages sent: {messages_sent}")
         return {"status": "success", "messages_sent": messages_sent}
         
     except Exception as e:
-        print(f"Ghost retargeting task failed: {e}")
+        print(f"Smart ghost retargeting failed: {e}")
         return {"status": "error", "message": str(e)}
 
 @celery_app.task
