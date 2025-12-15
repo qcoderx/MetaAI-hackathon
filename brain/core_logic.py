@@ -1,83 +1,113 @@
 from brain.llama_client import LlamaClient
-from brain.prompts import SALES_EXPERT_PROMPT
+from brain.prompts import ARBITRAGE_ANALYST_PROMPT
 from brain.predictive import PredictiveEngine
 from app.models import (
     Product, Customer, CustomerType, Strategy, 
-    PricingDecision, CompetitorPrice
+    PricingDecision, CompetitorPrice, DataTier
 )
 from sqlmodel import Session, select, func
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 from datetime import datetime
+import random
+import string
 
 class PricingAgent:
-    """The Core Brain: Dual-Path Pricing Decision Engine"""
+    """The Arbitrage Engine: Tiered Intelligence & Real-Time Fact Checking"""
     
     def __init__(self):
         self.llama = LlamaClient()
         self.predictor = PredictiveEngine()
     
-    def get_market_data(self, session: Session, product_id: int) -> Dict[str, float]:
-        """Get average and lowest competitor prices"""
+    def get_tiered_market_data(self, session: Session, product_id: int) -> Dict:
+        """Get tiered market intelligence with surge detection"""
         prices = session.exec(
             select(CompetitorPrice)
             .where(CompetitorPrice.product_id == product_id)
         ).all()
         
         if not prices:
-            return {"avg": 0, "lowest": 0}
+            return {"surge_mode": False, "trusted_competitors": [], "noise_competitors": [], "market_price": 0}
         
-        price_values = [p.price for p in prices]
+        # Separate by tiers
+        tier1_prices = [p for p in prices if p.tier == DataTier.TIER_1_TRUTH]
+        tier2_prices = [p for p in prices if p.tier == DataTier.TIER_2_MARKET]
+        tier3_prices = [p for p in prices if p.tier == DataTier.TIER_3_NOISE]
+        
+        # Check surge mode - all Tier 1 out of stock
+        surge_mode = len(tier1_prices) > 0 and all(p.is_out_of_stock for p in tier1_prices)
+        
+        # Calculate market price
+        market_price = 0
+        if tier1_prices:
+            tier1_available = [p.price for p in tier1_prices if not p.is_out_of_stock]
+            if tier1_available:
+                market_price = sum(tier1_available) / len(tier1_available)
+            elif surge_mode:
+                # Use last known Tier 1 prices + 10% surge
+                tier1_all = [p.price for p in tier1_prices]
+                market_price = (sum(tier1_all) / len(tier1_all)) * 1.1
+        elif tier2_prices:
+            tier2_available = [p.price for p in tier2_prices]
+            market_price = sum(tier2_available) / len(tier2_available)
+        
         return {
-            "avg": sum(price_values) / len(price_values),
-            "lowest": min(price_values)
+            "surge_mode": surge_mode,
+            "trusted_competitors": [(p.price, p.url, p.source) for p in tier1_prices + tier2_prices],
+            "noise_competitors": [(p.price, p.url, p.source, p.seller_joined_date) for p in tier3_prices],
+            "market_price": market_price
         }
     
     def make_pricing_decision(
         self,
         session: Session,
         product: Product,
-        customer: Optional[Customer] = None
+        customer: Optional[Customer] = None,
+        customer_claim: Optional[str] = None
     ) -> Dict:
         """
-        Core decision-making logic
-        Returns: {strategy, price, reasoning, message_angle, conversion_prob}
+        Arbitrage Engine decision-making logic
+        Returns: {strategy, price, reasoning, message_angle, conversion_prob, flash_code}
         """
-        market_data = self.get_market_data(session, product.id)
+        market_intel = self.get_tiered_market_data(session, product.id)
         
         customer_type = customer.customer_type if customer else CustomerType.UNKNOWN
-        customer_type_str = customer_type.value
         
-        # Build prompt for Llama 3
-        prompt = SALES_EXPERT_PROMPT.format(
+        # Build arbitrage context for Llama 3
+        prompt = ARBITRAGE_ANALYST_PROMPT.format(
             product_name=product.name,
             current_price=product.current_price,
             floor_price=product.floor_price,
-            market_avg_price=market_data["avg"] or product.current_price,
-            lowest_competitor_price=market_data["lowest"] or product.current_price,
-            customer_type=customer_type_str
+            market_price=market_intel["market_price"],
+            surge_mode=market_intel["surge_mode"],
+            trusted_competitors=str(market_intel["trusted_competitors"][:3]),
+            noise_competitors=str(market_intel["noise_competitors"][:3]),
+            customer_type=customer_type.value,
+            customer_claim=customer_claim or "No specific claim"
         )
         
         # Get AI recommendation
         ai_decision = self.llama.generate_json(prompt)
         
         if not ai_decision:
-            # Fallback to rule-based logic
-            ai_decision = self._fallback_decision(
-                product, market_data, customer_type
-            )
+            ai_decision = self._fallback_arbitrage_decision(product, market_intel, customer_type)
         
         # Validate floor price constraint
         recommended_price = ai_decision.get("recommended_price", product.current_price)
         if recommended_price < product.floor_price:
             recommended_price = product.floor_price
-            ai_decision["reasoning"] += " (Adjusted to floor price)"
+            ai_decision["reasoning"] += " (Floor price enforced)"
+        
+        # Generate flash liquidity code if offering discount
+        flash_code = None
+        if recommended_price < product.current_price:
+            flash_code = "PAY-" + ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
         
         # Calculate conversion probability
         customer_type_score = 0.0 if customer_type == CustomerType.PRICE_SENSITIVE else 1.0
         conversion_prob = self.predictor.calculate_heuristic_probability(
             current_price=product.current_price,
             new_price=recommended_price,
-            market_avg=market_data["avg"] or product.current_price,
+            market_avg=market_intel["market_price"],
             customer_type_score=customer_type_score
         )
         
@@ -89,8 +119,8 @@ class PricingAgent:
             new_price=recommended_price,
             strategy=Strategy(ai_decision["strategy"]),
             reasoning=ai_decision["reasoning"],
-            market_avg_price=market_data["avg"] or 0,
-            lowest_competitor_price=market_data["lowest"] or 0,
+            market_avg_price=market_intel["market_price"],
+            lowest_competitor_price=min([p[0] for p in market_intel["trusted_competitors"]], default=0),
             conversion_probability=conversion_prob
         )
         session.add(decision_log)
@@ -102,36 +132,41 @@ class PricingAgent:
             "reasoning": ai_decision["reasoning"],
             "message_angle": ai_decision.get("message_angle", ""),
             "conversion_probability": conversion_prob,
-            "market_data": market_data
+            "flash_code": flash_code,
+            "surge_mode": market_intel["surge_mode"],
+            "market_intel": market_intel
         }
     
-    def _fallback_decision(
+    def _fallback_arbitrage_decision(
         self,
         product: Product,
-        market_data: Dict,
+        market_intel: Dict,
         customer_type: CustomerType
     ) -> Dict:
-        """Rule-based fallback when AI is unavailable"""
-        market_avg = market_data["avg"] or product.current_price
-        lowest = market_data["lowest"] or product.current_price
+        """Rule-based arbitrage fallback when AI is unavailable"""
+        if market_intel["surge_mode"]:
+            return {
+                "strategy": "value_reinforcement",
+                "recommended_price": product.current_price,
+                "reasoning": "Surge mode active - major retailers out of stock. Price firm.",
+                "message_angle": "Supply is scarce, price is firm"
+            }
         
-        if customer_type == CustomerType.PRICE_SENSITIVE:
-            # Try to match or beat lowest competitor
-            target_price = max(lowest - 100, product.floor_price)
-            if target_price < product.current_price:
-                return {
-                    "strategy": "price_drop",
-                    "recommended_price": target_price,
-                    "reasoning": f"Price-sensitive customer. Dropped to ₦{target_price} to compete.",
-                    "message_angle": "Best price in the market right now"
-                }
+        market_price = market_intel["market_price"]
+        if market_price and market_price < product.current_price:
+            target_price = max(market_price - 500, product.floor_price)
+            return {
+                "strategy": "match_offer",
+                "recommended_price": target_price,
+                "reasoning": f"Matching market at ₦{target_price}",
+                "message_angle": "Market-matched price with added value"
+            }
         
-        # Quality-sensitive or unknown: reinforce value
         return {
             "strategy": "value_reinforcement",
             "recommended_price": product.current_price,
-            "reasoning": "Maintaining price and emphasizing quality/warranty.",
-            "message_angle": "Original product with warranty"
+            "reasoning": "Maintaining premium positioning",
+            "message_angle": "Premium quality with warranty"
         }
     
     def should_retarget_customer(

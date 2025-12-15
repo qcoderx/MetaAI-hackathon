@@ -9,11 +9,11 @@ from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 import time
 import re
-from typing import List, Dict
+from typing import List, Dict, Optional
 from sqlmodel import Session
 from app.database import get_session
-from app.models import CompetitorPrice
-from datetime import datetime
+from app.models import CompetitorPrice, DataTier
+from datetime import datetime, timedelta
 
 class JijiScraper:
     """Scraper for Jiji.ng marketplace"""
@@ -29,7 +29,6 @@ class JijiScraper:
         prices = []
         
         try:
-            # Format search query
             query = product_name.replace(' ', '+')
             search_url = f"{self.base_url}/search?query={query}"
             
@@ -37,13 +36,10 @@ class JijiScraper:
             response.raise_for_status()
             
             soup = BeautifulSoup(response.content, 'html.parser')
-            
-            # Find product listings
             listings = soup.find_all('div', class_='b-list-advert__gallery__item')[:max_results]
             
             for listing in listings:
                 try:
-                    # Extract price
                     price_elem = listing.find('div', class_='qa-advert-price')
                     if not price_elem:
                         continue
@@ -52,14 +48,30 @@ class JijiScraper:
                     price = self._extract_price(price_text)
                     
                     if price:
-                        # Extract URL
                         link_elem = listing.find('a')
                         url = self.base_url + link_elem.get('href') if link_elem else ""
+                        
+                        # Extract seller verification status
+                        seller_verified = bool(listing.find(['span', 'div'], class_=re.compile(r'verified|vip|badge', re.I)))
+                        
+                        # Extract seller join date
+                        seller_joined = None
+                        join_text = listing.find(text=re.compile(r'joined.*ago', re.I))
+                        if join_text:
+                            seller_joined = self._parse_join_date(join_text)
+                        
+                        # Determine tier
+                        tier = DataTier.TIER_3_NOISE
+                        if seller_verified or (seller_joined and seller_joined < datetime.utcnow() - timedelta(days=180)):
+                            tier = DataTier.TIER_2_MARKET
                         
                         prices.append({
                             'price': price,
                             'url': url,
-                            'source': 'Jiji'
+                            'source': 'Jiji',
+                            'tier': tier,
+                            'seller_is_verified': seller_verified,
+                            'seller_joined_date': seller_joined
                         })
                 
                 except Exception as e:
@@ -71,17 +83,31 @@ class JijiScraper:
         
         return prices
     
-    def _extract_price(self, price_text: str) -> float:
+    def _extract_price(self, price_text: str) -> Optional[float]:
         """Extract numeric price from text"""
-        # Remove currency symbols and commas
         price_clean = re.sub(r'[₦,\s]', '', price_text)
-        
-        # Extract numbers
         numbers = re.findall(r'\d+', price_clean)
         
         if numbers:
             return float(''.join(numbers))
         
+        return None
+    
+    def _parse_join_date(self, join_text: str) -> Optional[datetime]:
+        """Parse 'Joined X months ago' text to datetime"""
+        try:
+            if 'month' in join_text.lower():
+                months = re.search(r'(\d+)', join_text)
+                if months:
+                    months_ago = int(months.group(1))
+                    return datetime.utcnow() - timedelta(days=months_ago * 30)
+            elif 'year' in join_text.lower():
+                years = re.search(r'(\d+)', join_text)
+                if years:
+                    years_ago = int(years.group(1))
+                    return datetime.utcnow() - timedelta(days=years_ago * 365)
+        except:
+            pass
         return None
 
 class JumiaScraper:
@@ -98,7 +124,6 @@ class JumiaScraper:
         prices = []
         
         try:
-            # Format search query
             query = product_name.replace(' ', '%20')
             search_url = f"{self.base_url}/catalog/?q={query}"
             
@@ -106,13 +131,10 @@ class JumiaScraper:
             response.raise_for_status()
             
             soup = BeautifulSoup(response.content, 'html.parser')
-            
-            # Find product listings
             listings = soup.find_all('article', class_='prd')[:max_results]
             
             for listing in listings:
                 try:
-                    # Extract price
                     price_elem = listing.find('div', class_='prc')
                     if not price_elem:
                         continue
@@ -121,14 +143,23 @@ class JumiaScraper:
                     price = self._extract_price(price_text)
                     
                     if price:
-                        # Extract URL
                         link_elem = listing.find('a', class_='core')
                         url = self.base_url + link_elem.get('href') if link_elem else ""
+                        
+                        # Check stock status
+                        out_of_stock = bool(listing.find(['span', 'div'], text=re.compile(r'out of stock|unavailable|sold out', re.I)))
+                        if not out_of_stock:
+                            cart_btn = listing.find(['button', 'a'], class_=re.compile(r'add.*cart|buy', re.I))
+                            if cart_btn and ('disabled' in cart_btn.get('class', []) or cart_btn.get('disabled')):
+                                out_of_stock = True
                         
                         prices.append({
                             'price': price,
                             'url': url,
-                            'source': 'Jumia'
+                            'source': 'Jumia',
+                            'tier': DataTier.TIER_1_TRUTH,
+                            'is_out_of_stock': out_of_stock,
+                            'seller_is_verified': True
                         })
                 
                 except Exception as e:
@@ -140,103 +171,15 @@ class JumiaScraper:
         
         return prices
     
-    def _extract_price(self, price_text: str) -> float:
+    def _extract_price(self, price_text: str) -> Optional[float]:
         """Extract numeric price from text"""
-        # Remove currency symbols and commas
         price_clean = re.sub(r'[₦,\s]', '', price_text)
-        
-        # Extract numbers
         numbers = re.findall(r'\d+', price_clean)
         
         if numbers:
             return float(''.join(numbers))
         
         return None
-
-class SeleniumScraper:
-    """Selenium-based scraper for JavaScript-heavy sites"""
-    
-    def __init__(self):
-        self.driver = None
-    
-    def _setup_driver(self):
-        """Setup Chrome driver with options"""
-        if self.driver:
-            return
-        
-        chrome_options = Options()
-        chrome_options.add_argument('--headless')
-        chrome_options.add_argument('--no-sandbox')
-        chrome_options.add_argument('--disable-dev-shm-usage')
-        chrome_options.add_argument('--disable-gpu')
-        chrome_options.add_argument('--window-size=1920,1080')
-        chrome_options.add_argument('--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36')
-        
-        service = Service(ChromeDriverManager().install())
-        self.driver = webdriver.Chrome(service=service, options=chrome_options)
-    
-    def scrape_dynamic_site(self, url: str, product_name: str) -> List[Dict]:
-        """Scrape sites that require JavaScript execution"""
-        prices = []
-        
-        try:
-            self._setup_driver()
-            self.driver.get(url)
-            
-            # Wait for page to load
-            WebDriverWait(self.driver, 10).until(
-                EC.presence_of_element_located((By.TAG_NAME, "body"))
-            )
-            
-            # Search for product
-            search_box = self.driver.find_element(By.CSS_SELECTOR, "input[type='search'], input[name='q'], input[placeholder*='search']")
-            search_box.clear()
-            search_box.send_keys(product_name)
-            search_box.submit()
-            
-            time.sleep(3)  # Wait for results
-            
-            # Extract prices (generic selectors)
-            price_elements = self.driver.find_elements(By.CSS_SELECTOR, "[class*='price'], [class*='cost'], [class*='amount']")
-            
-            for elem in price_elements[:10]:
-                try:
-                    price_text = elem.text.strip()
-                    price = self._extract_price(price_text)
-                    
-                    if price and price > 1000:  # Filter out invalid prices
-                        prices.append({
-                            'price': price,
-                            'url': self.driver.current_url,
-                            'source': 'Dynamic Site'
-                        })
-                
-                except Exception as e:
-                    continue
-        
-        except Exception as e:
-            print(f"Error with Selenium scraping: {e}")
-        
-        return prices
-    
-    def _extract_price(self, price_text: str) -> float:
-        """Extract numeric price from text"""
-        # Remove currency symbols and commas
-        price_clean = re.sub(r'[₦,\s]', '', price_text)
-        
-        # Extract numbers
-        numbers = re.findall(r'\d+', price_clean)
-        
-        if numbers:
-            return float(''.join(numbers))
-        
-        return None
-    
-    def close(self):
-        """Close the browser"""
-        if self.driver:
-            self.driver.quit()
-            self.driver = None
 
 class ScraperManager:
     """Main scraper coordinator"""
@@ -244,7 +187,6 @@ class ScraperManager:
     def __init__(self):
         self.jiji_scraper = JijiScraper()
         self.jumia_scraper = JumiaScraper()
-        self.selenium_scraper = SeleniumScraper()
     
     def scrape_all(self, product_name: str, product_id: int) -> int:
         """Scrape all sources and save to database"""
@@ -252,12 +194,10 @@ class ScraperManager:
         
         try:
             with next(get_session()) as session:
-                # Scrape Jiji
                 print(f"Scraping Jiji for: {product_name}")
                 jiji_prices = self.jiji_scraper.scrape_product(product_name)
                 total_prices += self._save_prices(session, jiji_prices, product_id)
                 
-                # Scrape Jumia
                 print(f"Scraping Jumia for: {product_name}")
                 jumia_prices = self.jumia_scraper.scrape_product(product_name)
                 total_prices += self._save_prices(session, jumia_prices, product_id)
@@ -267,10 +207,6 @@ class ScraperManager:
         
         except Exception as e:
             print(f"Error in scrape_all: {e}")
-        
-        finally:
-            # Clean up Selenium driver
-            self.selenium_scraper.close()
         
         return total_prices
     
@@ -285,7 +221,11 @@ class ScraperManager:
                     source=price_data['source'],
                     price=price_data['price'],
                     url=price_data.get('url', ''),
-                    scraped_at=datetime.utcnow()
+                    scraped_at=datetime.utcnow(),
+                    tier=price_data.get('tier', DataTier.TIER_3_NOISE),
+                    is_out_of_stock=price_data.get('is_out_of_stock', False),
+                    seller_is_verified=price_data.get('seller_is_verified', False),
+                    seller_joined_date=price_data.get('seller_joined_date')
                 )
                 
                 session.add(competitor_price)
@@ -296,19 +236,3 @@ class ScraperManager:
                 continue
         
         return saved_count
-    
-    def scrape_specific_site(self, url: str, product_name: str, product_id: int) -> int:
-        """Scrape a specific website using Selenium"""
-        try:
-            with next(get_session()) as session:
-                prices = self.selenium_scraper.scrape_dynamic_site(url, product_name)
-                saved_count = self._save_prices(session, prices, product_id)
-                session.commit()
-                return saved_count
-        
-        except Exception as e:
-            print(f"Error scraping specific site: {e}")
-            return 0
-        
-        finally:
-            self.selenium_scraper.close()
