@@ -319,6 +319,12 @@ async def _handle_message_event(session: Session, data: Dict):
         print(f"👤 ADMIN COMMAND detected: '{text}'")
         return await _handle_admin_command(session, business_config, text)
     
+    elif from_me:
+        # Any message from owner - could be admin command
+        print(f"👤 OWNER MESSAGE detected: '{text}'")
+        if text.upper().startswith('ADD '):
+            return await _handle_admin_command(session, business_config, text)
+    
     elif from_me and message_phone_clean != owner_phone_clean:
         # Owner manually replying to customer - Bot stays silent
         print(f"💬 MANUAL TAKEOVER detected")
@@ -326,7 +332,7 @@ async def _handle_message_event(session: Session, data: Dict):
     
     elif not from_me:
         # Customer message - Trigger Sales Agent
-        print(f"👥 CUSTOMER MESSAGE detected")
+        print(f"👥 CUSTOMER MESSAGE detected: '{text}'")
         if not business_config.bot_active:
             print(f"🚫 Bot is inactive")
             return {"status": "ignored", "reason": "Bot is inactive"}
@@ -349,6 +355,7 @@ async def _handle_message_event(session: Session, data: Dict):
 
 async def _handle_admin_command(session: Session, business_config: BusinessConfig, command: str):
     """Handle admin commands from owner's self-chat"""
+    print(f"🔧 Processing admin command: '{command}'")
     command_lower = command.lower().strip()
     
     if command_lower == "stats":
@@ -400,9 +407,11 @@ Generated: {datetime.now().strftime('%H:%M')}"""
     
     elif command_lower.startswith("add "):
         # Format: ADD Product Name, Current Price, Floor Price
+        print(f"📎 ADD command detected: '{command}'")
         try:
             raw_data = command[4:].strip()
             parts = [p.strip() for p in raw_data.split(',')]
+            print(f"📊 Parsed parts: {parts}")
             
             if len(parts) != 3:
                 raise ValueError("Format: ADD Name, Price, Floor")
@@ -425,15 +434,18 @@ Generated: {datetime.now().strftime('%H:%M')}"""
             )
             session.add(new_product)
             session.commit()
+            print(f"✅ Product created in database: {name}")
             
             msg = f"✅ Product Added!\n\n📱 {name}\n💰 Price: ₦{current_price:,.0f}\n🛡️ Floor: ₦{floor_price:,.0f}"
             whatsapp_client = EvolutionClient()
             import time
             time.sleep(2)
-            whatsapp_client.send_message(business_config.owner_phone, msg)
+            result = whatsapp_client.send_message(business_config.owner_phone, msg)
+            print(f"📱 WhatsApp response sent: {result}")
             return {"status": "success", "message": "Product added"}
 
         except Exception as e:
+            print(f"❌ ADD command error: {e}")
             whatsapp_client = EvolutionClient()
             error_msg = f"❌ Error adding product.\nFormat: ADD Name, Price, Floor\nError: {str(e)}"
             import time
