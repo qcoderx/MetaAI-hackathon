@@ -7,11 +7,45 @@ load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./naira_sniper.db")
 
-engine = create_engine(DATABASE_URL, echo=True)
+# Configure engine with proper connection parameters for Neon
+engine = create_engine(
+    DATABASE_URL,
+    echo=False,
+    pool_pre_ping=True,
+    pool_recycle=300,
+    connect_args={
+        "sslmode": "require",
+        "connect_timeout": 10,
+        "application_name": "naira_sniper"
+    } if DATABASE_URL.startswith("postgresql") else {}
+)
 
 def create_db_and_tables():
-    SQLModel.metadata.create_all(engine)
+    import time
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            SQLModel.metadata.create_all(engine)
+            print(f"✅ Database tables created successfully")
+            return
+        except Exception as e:
+            print(f"❌ Database attempt {attempt + 1}/{max_retries} failed: {e}")
+            if attempt < max_retries - 1:
+                time.sleep(2)
+            else:
+                raise
 
 def get_session() -> Generator[Session, None, None]:
-    with Session(engine) as session:
-        yield session
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            with Session(engine) as session:
+                yield session
+                return
+        except Exception as e:
+            print(f"❌ Session attempt {attempt + 1}/{max_retries} failed: {e}")
+            if attempt < max_retries - 1:
+                import time
+                time.sleep(1)
+            else:
+                raise

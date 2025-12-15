@@ -7,11 +7,20 @@ load_dotenv()
 
 class LlamaClient:
     def __init__(self):
-        self.client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+        api_key = os.getenv("GROQ_API_KEY")
+        if not api_key:
+            print("Warning: GROQ_API_KEY not found")
+            self.client = None
+        else:
+            self.client = Groq(api_key=api_key)
         self.model = "llama-3.1-70b-versatile"
     
     def generate(self, prompt: str, temperature: float = 0.7) -> str:
         """Generate response from Llama 3"""
+        if not self.client:
+            print("Groq client not initialized")
+            return None
+            
         try:
             chat_completion = self.client.chat.completions.create(
                 messages=[
@@ -35,6 +44,9 @@ class LlamaClient:
     
     def generate_json(self, prompt: str) -> dict:
         """Generate and parse JSON response"""
+        if not self.client:
+            return None
+            
         response = self.generate(prompt, temperature=0.3)
         if response:
             try:
@@ -49,3 +61,25 @@ class LlamaClient:
                 print(f"Response was: {response}")
                 return None
         return None
+    
+    def generate_text(self, prompt: str) -> str:
+        """Generate simple text response"""
+        if not self.client:
+            return "I'm currently unable to process your request. Please try again later."
+            
+        try:
+            chat_completion = self.client.chat.completions.create(
+                messages=[
+                    {
+                        "role": "user",
+                        "content": prompt
+                    }
+                ],
+                model=self.model,
+                temperature=0.7,
+                max_tokens=512
+            )
+            return chat_completion.choices[0].message.content
+        except Exception as e:
+            print(f"Error calling Groq API: {e}")
+            return "I'm currently unable to process your request. Please try again later."

@@ -12,10 +12,10 @@ services:
       - DOCKER_ENV=true
       - AUTHENTICATION_API_KEY=naira-sniper-secret-key
       
-      # FIX: Force specific WhatsApp Web Version to fix QR Code (GitHub Issue #2224)
+      # CRITICAL FIX: GitHub Issue #2224 - Force WhatsApp Web Version
       - CONFIG_SESSION_PHONE_VERSION=2.3000.1029620931
       
-      # Database Configuration
+      # Database Configuration (Required for v2.3+)
       - DATABASE_ENABLED=true
       - DATABASE_PROVIDER=postgresql
       - DATABASE_CONNECTION_URI=postgresql://evolution:evolution_password@postgres:5432/evolution_db

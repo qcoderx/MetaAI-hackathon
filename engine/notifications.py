@@ -218,12 +218,41 @@ Still available with warranty. Interested?"""
         
         command_lower = command_text.lower().strip()
         
+        # START, HELP, MENU commands
+        if command_lower in ["start", "help", "menu"]:
+            help_text = """📋 ADMIN COMMANDS MENU
+
+🔧 BOT CONTROL:
+• BOT ON - Activate sales assistant
+• BOT OFF - Deactivate sales assistant
+
+📦 ORDER MANAGEMENT:
+• CONFIRM [order_id] - Approve order
+• CANCEL [order_id] - Cancel order
+
+📊 INFORMATION:
+• STATS - View business statistics
+• HELP - Show this menu
+
+💡 TIP: Send commands to yourself (Note to Self)"""
+            
+            try:
+                self.whatsapp.send_message(owner_phone, help_text)
+                return {"success": True, "message": "Help menu sent"}
+            except Exception as e:
+                return {"success": False, "error": f"Failed to send help: {str(e)}"}
+        
         # CONFIRM order command
-        if command_lower.startswith("confirm "):
+        elif command_lower.startswith("confirm "):
             try:
                 order_id = int(command_lower.split(" ")[1])
                 return self._confirm_order(session, order_id)
             except (ValueError, IndexError):
+                error_msg = "❌ Invalid format. Use: CONFIRM [order_id]\nExample: CONFIRM 123"
+                try:
+                    self.whatsapp.send_message(owner_phone, error_msg)
+                except:
+                    pass
                 return {"success": False, "error": "Invalid confirm command format"}
         
         # CANCEL order command
@@ -232,21 +261,50 @@ Still available with warranty. Interested?"""
                 order_id = int(command_lower.split(" ")[1])
                 return self._cancel_order(session, order_id)
             except (ValueError, IndexError):
+                error_msg = "❌ Invalid format. Use: CANCEL [order_id]\nExample: CANCEL 123"
+                try:
+                    self.whatsapp.send_message(owner_phone, error_msg)
+                except:
+                    pass
                 return {"success": False, "error": "Invalid cancel command format"}
         
         # BOT ON/OFF commands
         elif command_lower == "bot off":
             business_config.bot_active = False
             session.commit()
+            try:
+                self.whatsapp.send_message(owner_phone, "🛑 Bot deactivated. Customers will not receive automatic responses.")
+            except:
+                pass
             return {"success": True, "message": "Bot deactivated"}
         
         elif command_lower == "bot on":
             business_config.bot_active = True
             session.commit()
+            try:
+                self.whatsapp.send_message(owner_phone, "✅ Bot activated. Ready to handle customer inquiries.")
+            except:
+                pass
             return {"success": True, "message": "Bot activated"}
         
+        # Unknown command - send helpful error
         else:
-            return {"success": False, "error": "Unknown command"}
+            error_msg = f"""❓ Unknown command: "{command_text}"
+
+📋 Available commands:
+• START/HELP/MENU - Show commands
+• BOT ON/OFF - Control bot
+• CONFIRM [order_id] - Approve order
+• CANCEL [order_id] - Cancel order
+• STATS - View statistics
+
+💡 Send HELP for full menu"""
+            
+            try:
+                self.whatsapp.send_message(owner_phone, error_msg)
+                return {"success": True, "message": "Unknown command help sent"}
+            except Exception as e:
+                return {"success": False, "error": f"Failed to send error help: {str(e)}"}
     
     def _confirm_order(self, session: Session, order_id: int) -> Dict:
         """Confirm order and notify customer"""

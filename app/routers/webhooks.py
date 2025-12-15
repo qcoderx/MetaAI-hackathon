@@ -129,105 +129,303 @@ async def handle_evolution_webhook(
     request: Request,
     session: Session = Depends(get_session)
 ):
-    """Handle incoming messages from Evolution API v2 with conversational AI"""
+    """Handle incoming messages from Evolution API v2 with dynamic owner discovery"""
     try:
         body = await request.body()
         payload = json.loads(body.decode('utf-8'))
         
-        # Extract message data from Evolution API v2 payload
+        # DEBUG: Log all incoming webhooks
+        print(f"🔍 WEBHOOK RECEIVED: {json.dumps(payload, indent=2)}")
+        
         data = payload.get("data", {})
+        event = payload.get("event", "")
         
-        # Handle different message types
-        message_data = None
+        print(f"📨 Event: {event}, Data keys: {list(data.keys())}")
+        
+        # Phase 1: Handle CONNECTION_UPDATE for dynamic owner discovery
+        if event == "CONNECTION_UPDATE":
+            status = data.get("state", "")
+            print(f"🔗 Connection update: {status}")
+            if status == "open":
+                return await _handle_connection_open(session)
+            return {"status": "ignored", "reason": "Connection not open"}
+        
+        # Handle message events
         if "message" in data:
-            msg = data["message"]
-            
-            # Extract text from different message types
-            text = None
-            if "conversation" in msg:
-                text = msg["conversation"]
-            elif "extendedTextMessage" in msg and "text" in msg["extendedTextMessage"]:
-                text = msg["extendedTextMessage"]["text"]
-            
-            if text:
-                # Extract phone and name
-                remote_jid = data.get("key", {}).get("remoteJid", "")
-                phone = remote_jid.replace("@s.whatsapp.net", "")
-                push_name = data.get("pushName", "Customer")
-                
-                if phone and text:
-                    message_data = {
-                        "phone": phone,
-                        "message": text,
-                        "customer_name": push_name
-                    }
+            print(f"💬 Processing message event")
+            return await _handle_message_event(session, data)
         
-        if not message_data:
-            return {"status": "ignored", "reason": "No text message found"}
+        print(f"⚠️ No relevant event found in payload")
+        return {"status": "ignored", "reason": "No relevant event found"}
+        
+    except Exception as e:
+        print(f"❌ Error processing Evolution webhook: {e}")
+        import traceback
+        traceback.print_exc()
+        return {"status": "error", "message": str(e)}
+
+async def _handle_connection_open(session: Session):
+    """Handle WhatsApp connection open - discover and register owner"""
+    try:
+        from engine.whatsapp_evolution import EvolutionClient
+        import uuid
+        
+        whatsapp_client = EvolutionClient()
+        
+        # Get owner phone from Evolution API instance data
+        owner_phone = whatsapp_client.get_instance_data()
+        print(f"🔍 Extracted owner phone: {owner_phone}")
+        
+        if not owner_phone:
+            print(f"❌ Could not extract owner phone from instance data")
+            return {"status": "error", "reason": "Could not extract owner phone"}
         
         # Get or create business config
         business_config = session.exec(select(BusinessConfig)).first()
         if not business_config:
-            return {"status": "error", "reason": "Business config not found"}
+            print(f"🏢 Creating new business config")
+            ntfy_topic = f"naira_sniper_admin_{str(uuid.uuid4())[:8]}"
+            business_config = BusinessConfig(
+                ntfy_topic=ntfy_topic,
+                bot_active=True,
+                business_name="Naira Sniper Store",
+                is_setup_complete=False
+            )
+            session.add(business_config)
+            session.commit()
+            session.refresh(business_config)
         
-        # Auto-register first user as owner if not set up
-        if not business_config.is_setup_complete and not business_config.owner_phone:
-            business_config.owner_phone = message_data["phone"]
+        # Only register if not already registered
+        if not business_config.owner_phone or business_config.owner_phone != owner_phone:
+            print(f"👤 Registering new owner: {owner_phone}")
+            business_config.owner_phone = owner_phone
             business_config.is_setup_complete = True
             session.commit()
             
-            # Send welcome message to new owner
-            whatsapp_client = EvolutionClient()
-            welcome_msg = f"🎉 Welcome to Naira Sniper!
+            # Send welcome message only once
+            welcome_msg = f"""🚀 System Connected!
 
-You are now registered as the business owner.
+I am now active on this WhatsApp account.
 
-Your AI sales assistant is active and ready to:
-✅ Handle customer inquiries
-✅ Process orders automatically
-✅ Send you notifications
+Your AI sales assistant is ready to:
+✅ Handle customer inquiries automatically
+✅ Process orders and send alerts
+✅ Send notifications to this chat
 
 🔔 PUSH NOTIFICATIONS:
 Install Ntfy app and subscribe to: {business_config.ntfy_topic}
 
-Commands:
-• BOT ON/OFF - Control bot
+📝 ADMIN COMMANDS (send to yourself):
+• START/HELP - Show commands menu
+• STATS - View business statistics
+• BOT OFF/ON - Control bot activity
 • CONFIRM [order_id] - Approve orders
 • CANCEL [order_id] - Cancel orders
 
-Let's start selling! 🚀"
+Ready to sell! 💰"""
             
             try:
-                whatsapp_client.send_message(message_data["phone"], welcome_msg)
+                import time
+                time.sleep(2)  # Anti-spam delay
+                result = whatsapp_client.send_message(owner_phone, welcome_msg)
+                print(f"💬 Welcome message sent: {result}")
             except Exception as e:
-                print(f"Failed to send welcome message: {e}")
+                print(f"❌ Failed to send welcome message: {e}")
             
-            return {"status": "owner_registered", "phone": message_data["phone"]}
+            print(f"✅ Owner registered successfully: {owner_phone}")
+            return {"status": "owner_registered", "phone": owner_phone}
+        else:
+            print(f"👤 Owner already registered: {owner_phone}")
+            return {"status": "already_registered", "phone": owner_phone}
         
-        # Check if bot is active
+    except Exception as e:
+        print(f"❌ Error handling connection open: {e}")
+        import traceback
+        traceback.print_exc()
+        return {"status": "error", "message": str(e)}
+
+async def _handle_message_event(session: Session, data: Dict):
+    """Handle incoming message with self-chat admin console logic"""
+    msg = data["message"]
+    key = data.get("key", {})
+    
+    print(f"💬 Message data: {json.dumps(msg, indent=2)}")
+    print(f"🔑 Key data: {json.dumps(key, indent=2)}")
+    
+    # Extract message details
+    text = None
+    if "conversation" in msg:
+        text = msg["conversation"]
+    elif "extendedTextMessage" in msg and "text" in msg["extendedTextMessage"]:
+        text = msg["extendedTextMessage"]["text"]
+    
+    print(f"📝 Extracted text: '{text}'")
+    
+    if not text:
+        return {"status": "ignored", "reason": "No text message"}
+    
+    # Extract phone numbers and message direction
+    remote_jid = key.get("remoteJid", "")
+    from_me = key.get("fromMe", False)
+    push_name = data.get("pushName", "Customer")
+    
+    # Clean phone number
+    phone = remote_jid.replace("@s.whatsapp.net", "")
+    if phone.startswith("234"):
+        phone = f"+{phone}"
+    
+    print(f"📱 Phone: {phone}, FromMe: {from_me}, Name: {push_name}")
+    
+    # Get business config
+    business_config = session.exec(select(BusinessConfig)).first()
+    if not business_config:
+        print(f"❌ No business config found")
+        return {"status": "error", "reason": "No business config"}
+    
+    print(f"🏢 Owner phone: {business_config.owner_phone}, Setup complete: {business_config.is_setup_complete}")
+    
+    if not business_config.owner_phone:
+        print(f"❌ Owner not registered yet")
+        return {"status": "error", "reason": "Owner not registered"}
+    
+    owner_phone_clean = business_config.owner_phone.replace("+", "")
+    message_phone_clean = phone.replace("+", "")
+    
+    print(f"🔍 Comparing phones - Owner: {owner_phone_clean}, Message: {message_phone_clean}")
+    
+    # Phase 2: Self-Chat Admin Console Logic
+    if from_me and message_phone_clean == owner_phone_clean:
+        # Owner talking to themselves (Note to Self) - Admin Command
+        print(f"👤 ADMIN COMMAND detected: '{text}'")
+        return await _handle_admin_command(session, business_config, text)
+    
+    elif from_me and message_phone_clean != owner_phone_clean:
+        # Owner manually replying to customer - Bot stays silent
+        print(f"💬 MANUAL TAKEOVER detected")
+        return {"status": "manual_takeover", "reason": "Owner manually replying"}
+    
+    elif not from_me:
+        # Customer message - Trigger Sales Agent
+        print(f"👥 CUSTOMER MESSAGE detected")
         if not business_config.bot_active:
+            print(f"🚫 Bot is inactive")
             return {"status": "ignored", "reason": "Bot is inactive"}
         
-        # Check if this is the business owner sending commands
+        return await _handle_customer_message(session, phone, text, push_name)
+    
+    print(f"❓ Unknown message type")
+    return {"status": "ignored", "reason": "Unknown message type"}
+
+# Rate limiting for admin commands
+last_command_time = {}
+
+async def _handle_admin_command(session: Session, business_config: BusinessConfig, command: str):
+    """Handle admin commands from owner's self-chat"""
+    import time
+    
+    # Rate limiting - max 1 command per 5 seconds
+    current_time = time.time()
+    owner_phone = business_config.owner_phone
+    
+    if owner_phone in last_command_time:
+        time_diff = current_time - last_command_time[owner_phone]
+        if time_diff < 5:  # 5 second cooldown
+            return {"status": "rate_limited", "message": "Please wait before sending another command"}
+    
+    last_command_time[owner_phone] = current_time
+    command_lower = command.lower().strip()
+    
+    # Deduplicate commands - ignore if same as last command
+    last_command_key = f"{owner_phone}_last_cmd"
+    if hasattr(_handle_admin_command, last_command_key):
+        if getattr(_handle_admin_command, last_command_key) == command_lower:
+            return {"status": "duplicate", "message": "Command already processed"}
+    
+    setattr(_handle_admin_command, last_command_key, command_lower)
+    
+    if command_lower == "stats":
+        # Generate quick stats
+        from app.models import Order, Customer
+        from datetime import datetime, timedelta
+        
+        today = datetime.utcnow().date()
+        orders_today = session.exec(
+            select(Order).where(Order.created_at >= today)
+        ).all()
+        
+        total_customers = session.exec(select(Customer)).all()
+        
+        stats_msg = f"""📊 BUSINESS STATS
+
+📅 Today:
+• Orders: {len(orders_today)}
+• Revenue: ₦{sum(o.total_amount for o in orders_today):,.0f}
+
+👥 Total Customers: {len(total_customers)}
+🤖 Bot Status: {'Active' if business_config.bot_active else 'Inactive'}
+
+Generated: {datetime.now().strftime('%H:%M')}"""
+        
+        whatsapp_client = EvolutionClient()
+        import time
+        time.sleep(2)  # Admin delay
+        whatsapp_client.send_message(business_config.owner_phone, stats_msg)
+        return {"status": "admin_command", "command": "stats"}
+    
+    elif command_lower == "bot off":
+        business_config.bot_active = False
+        session.commit()
+        whatsapp_client = EvolutionClient()
+        import time
+        time.sleep(2)  # Admin delay
+        whatsapp_client.send_message(business_config.owner_phone, "🚫 Bot deactivated. Customers will not receive automatic responses.")
+        return {"status": "admin_command", "command": "bot_off"}
+    
+    elif command_lower == "bot on":
+        business_config.bot_active = True
+        session.commit()
+        whatsapp_client = EvolutionClient()
+        import time
+        time.sleep(2)  # Admin delay
+        whatsapp_client.send_message(business_config.owner_phone, "✅ Bot activated. Ready to handle customer inquiries.")
+        return {"status": "admin_command", "command": "bot_on"}
+    
+    elif command_lower.startswith("confirm ") or command_lower.startswith("cancel "):
+        # Handle order commands
         notification_manager = NotificationManager()
-        if business_config.owner_phone == message_data["phone"]:
-            command_result = notification_manager.process_owner_command(
-                session, message_data["phone"], message_data["message"]
-            )
-            return {"status": "owner_command", "result": command_result}
+        result = notification_manager.process_owner_command(
+            session, business_config.owner_phone, command
+        )
+        return {"status": "admin_command", "command": "order_management", "result": result}
+    
+    else:
+        # Unknown command - send help
+        help_msg = """📝 ADMIN COMMANDS:
+
+• STATS - View business statistics
+• BOT ON/OFF - Control bot activity
+• CONFIRM [order_id] - Approve orders
+• CANCEL [order_id] - Cancel orders
+
+Send any command to this chat (Note to Self)."""
         
-        # Process customer message with Sales Agent
+        whatsapp_client = EvolutionClient()
+        import time
+        time.sleep(2)  # Admin delay
+        whatsapp_client.send_message(business_config.owner_phone, help_msg)
+        return {"status": "admin_command", "command": "help"}
+
+async def _handle_customer_message(session: Session, phone: str, text: str, customer_name: str):
+    """Handle customer message with Sales Agent"""
+    try:
         sales_agent = SalesAgent()
-        
-        # Get conversation history (simplified - in production would store in DB)
-        conversation_history = []  # TODO: Implement conversation history storage
         
         # Process message
         agent_response = sales_agent.process_message(
             session=session,
-            customer_phone=message_data["phone"],
-            message_text=message_data["message"],
-            conversation_history=conversation_history
+            customer_phone=phone,
+            message_text=text,
+            conversation_history=[]
         )
         
         # Send response back to customer
@@ -236,33 +434,32 @@ Let's start selling! 🚀"
         
         if agent_response.get("response"):
             try:
-                send_result = whatsapp_client.send_message(
-                    message_data["phone"],
-                    agent_response["response"]
-                )
-                response_sent = send_result.get("success", False)
+                import time
+                import random
+                time.sleep(random.uniform(30, 90))  # Customer delay 30-90 seconds
+                send_result = whatsapp_client.send_message(phone, agent_response["response"])
+                response_sent = "error" not in send_result
             except Exception as e:
                 print(f"Failed to send WhatsApp response: {e}")
         
         # Handle order creation alerts
         if agent_response.get("status") == "order_created":
             try:
-                notification_manager.send_order_alert(
-                    session, agent_response["order_id"]
-                )
+                notification_manager = NotificationManager()
+                notification_manager.send_order_alert(session, agent_response["order_id"])
             except Exception as e:
                 print(f"Failed to send order alert: {e}")
         
         return {
-            "status": "processed",
-            "customer_phone": message_data["phone"],
+            "status": "customer_processed",
+            "customer_phone": phone,
             "intent": agent_response.get("intent", "unknown"),
             "response_sent": response_sent,
             "agent_response": agent_response
         }
         
     except Exception as e:
-        print(f"Error processing Evolution webhook: {e}")
+        print(f"Error handling customer message: {e}")
         return {"status": "error", "message": str(e)}
 
 @router.post("/test/message")
@@ -338,3 +535,13 @@ def update_order_status(
         
     except Exception as e:
         raise HTTPException(500, f"Error updating order: {str(e)}")
+
+@router.get("/register-owner")
+def register_owner_manually(session: Session = Depends(get_session)):
+    """Manually register owner from Evolution API data"""
+    try:
+        import asyncio
+        result = asyncio.run(_handle_connection_open(session))
+        return result
+    except Exception as e:
+        raise HTTPException(500, f"Failed to register owner: {str(e)}")

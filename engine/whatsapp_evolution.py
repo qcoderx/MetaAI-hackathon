@@ -217,6 +217,64 @@ class EvolutionClient:
         else:
             return {"error": "Invalid response format"}
     
+    def get_instance_data(self) -> Optional[str]:
+        """Get instance data to extract owner phone number"""
+        result = self._make_request("GET", "/instance/fetchInstances")
+        
+        if isinstance(result, dict) and "error" in result:
+            print(f"Failed to fetch instance data: {result['error']}")
+            return None
+        
+        # Handle Evolution API v2 response format
+        instances = []
+        if isinstance(result, list):
+            instances = result
+        elif isinstance(result, dict) and "data" in result:
+            instances = result["data"]
+        
+        print(f"🔍 Found {len(instances)} instances")
+        
+        # Find our instance and extract owner phone
+        for instance in instances:
+            if not isinstance(instance, dict):
+                continue
+                
+            # Get instance name - try different fields
+            instance_name = instance.get("name") or instance.get("instanceName")
+            
+            print(f"🔍 Checking instance: {instance_name} vs {self.instance_name}")
+            
+            if instance_name == self.instance_name:
+                # Try different fields for owner JID
+                owner_jid = (
+                    instance.get("ownerJid") or 
+                    instance.get("owner") or 
+                    instance.get("number")
+                )
+                
+                print(f"🔍 Found owner JID: {owner_jid}")
+                
+                if owner_jid:
+                    # Extract phone number from JID or direct number
+                    if "@" in str(owner_jid):
+                        phone = str(owner_jid).split("@")[0]
+                    else:
+                        phone = str(owner_jid)
+                    
+                    # Format as +234xxxxxxxxx
+                    if phone.startswith("234"):
+                        formatted_phone = f"+{phone}"
+                    elif phone.startswith("+"):
+                        formatted_phone = phone
+                    else:
+                        formatted_phone = f"+234{phone}"
+                    
+                    print(f"📱 Formatted phone: {formatted_phone}")
+                    return formatted_phone
+        
+        print(f"❌ No matching instance found for: {self.instance_name}")
+        return None
+    
     def set_webhook(self) -> Dict[str, Any]:
         """Configure webhook to receive incoming messages"""
         # Wrap webhook data in "webhook" key as required by Evolution API v2

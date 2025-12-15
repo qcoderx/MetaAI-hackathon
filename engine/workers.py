@@ -13,7 +13,8 @@ import os
 celery_app = Celery(
     'naira_sniper',
     broker=os.getenv('REDIS_URL', 'redis://localhost:6379/0'),
-    backend=os.getenv('REDIS_URL', 'redis://localhost:6379/0')
+    backend=os.getenv('REDIS_URL', 'redis://localhost:6379/0'),
+    include=['engine.workers']
 )
 
 # Celery configuration
@@ -23,6 +24,8 @@ celery_app.conf.update(
     result_serializer='json',
     timezone='Africa/Lagos',
     enable_utc=True,
+    worker_prefetch_multiplier=1,
+    task_acks_late=True,
 )
 
 @celery_app.task

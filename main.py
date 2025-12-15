@@ -83,8 +83,10 @@ def health_check():
         }
     except Exception as e:
         return {
-            "status": "unhealthy",
-            "error": str(e)
+            "status": "degraded",
+            "database": "disconnected",
+            "error": "Database unavailable - running in offline mode",
+            "version": "2.0.0"
         }
 
 if __name__ == "__main__":
