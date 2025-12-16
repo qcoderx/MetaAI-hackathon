@@ -1,16 +1,14 @@
-import asyncio
 import json
 import os
 from datetime import datetime
 from typing import Dict, Any
 import redis
-import base64
 
-from fastapi import APIRouter, Request, HTTPException
+from fastapi import APIRouter, Request, HTTPException, Path
 from sqlmodel import Session, select
 
 from app.database import engine
-from app.models import Customer, BusinessRule
+from app.models import Business
 from brain.sales_agent import SalesAgent
 
 router = APIRouter(prefix="/webhooks", tags=["Webhooks"])
@@ -27,25 +25,36 @@ except:
     print("Redis not available - using memory deduplication")
     message_history = {}
 
-@router.post("/whatsapp")
-async def whatsapp_webhook(request: Request):
-    """Handle WhatsApp webhook events from Evolution API"""
+@router.post("/whatsapp/{instance_name}")
+async def whatsapp_webhook(request: Request, instance_name: str = Path(...)):
+    """Handle WhatsApp webhook events from Evolution API for specific instance"""
     try:
         data = await request.json()
-        print(f"Webhook received: {json.dumps(data, indent=2)}")
+        print(f"Webhook received for {instance_name}: {json.dumps(data, indent=2)}")
+        
+        # Get business by instance_name
+        with Session(engine) as session:
+            business = session.exec(
+                select(Business).where(Business.instance_name == instance_name)
+            ).first()
+            
+            if not business:
+                raise HTTPException(status_code=404, detail=f"Business with instance {instance_name} not found")
         
         # Handle Evolution API message format
         if "data" in data:
-            await _handle_message_event(data["data"])
+            await _handle_message_event(data["data"], business.id, business.instance_name)
         
         return {"status": "success"}
         
+    except HTTPException:
+        raise
     except Exception as e:
         print(f"Webhook error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-async def _handle_message_event(message_data: Dict[str, Any]):
-    """Process incoming WhatsApp messages"""
+async def _handle_message_event(message_data: Dict[str, Any], business_id: int, instance_name: str):
+    """Process incoming WhatsApp messages for specific business"""
     try:
         # Extract message details
         key = message_data.get("key", {})
@@ -85,44 +94,16 @@ async def _handle_message_event(message_data: Dict[str, Any]):
             
             if image_url and user_text:
                 # Process status reply with Vision AI
-                response = sales_agent.process_status_reply(from_number, image_url, user_text)
+                response = await sales_agent.process_status_reply(
+                    business_id, instance_name, from_number, image_url, user_text
+                )
                 print(f"Status reply from {from_number}: {user_text}")
                 print(f"AI Response: {response}")
-                # TODO: Send response via Evolution API
             else:
                 print(f"Status reply missing data - URL: {bool(image_url)}, Text: {bool(user_text)}")
         
-        # Handle admin commands
-        elif from_number == os.getenv("ADMIN_PHONE", ""):
-            await _handle_admin_command(from_number, msg)
-        
     except Exception as e:
         print(f"Error handling message event: {e}")
-
-async def _handle_admin_command(phone: str, msg: Dict[str, Any]):
-    """Handle admin commands for managing business rules"""
-    try:
-        text = msg.get("conversation", "")
-        if not text:
-            text = msg.get("extendedTextMessage", {}).get("text", "")
-        
-        if text.upper().startswith("ADD "):
-            # Format: ADD Category|Keywords|MinPrice|Instructions
-            parts = text[4:].split("|")
-            if len(parts) == 4:
-                with Session(engine) as session:
-                    rule = BusinessRule(
-                        category=parts[0].strip(),
-                        visual_keywords=parts[1].strip(),
-                        min_price=float(parts[2].strip()),
-                        negotiation_instruction=parts[3].strip()
-                    )
-                    session.add(rule)
-                    session.commit()
-                    print(f"Added rule: {rule.category}")
-        
-    except Exception as e:
-        print(f"Error handling admin command: {e}")
 
 @router.get("/health")
 async def health_check():

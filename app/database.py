@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./naira_sniper.db")
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./auto_closer.db")
 
 # Configure engine with proper connection parameters for Neon
 engine = create_engine(
@@ -16,7 +16,7 @@ engine = create_engine(
     connect_args={
         "sslmode": "require",
         "connect_timeout": 10,
-        "application_name": "naira_sniper"
+        "application_name": "auto_closer"
     } if DATABASE_URL.startswith("postgresql") else {}
 )
 

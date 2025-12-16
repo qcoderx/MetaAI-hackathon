@@ -1,23 +1,40 @@
 from fastapi import APIRouter, HTTPException, Depends
 from sqlmodel import Session, select
 from app.database import get_session
-from app.models import BusinessRule
+from app.models import BusinessRule, Business
 from typing import List
+from pydantic import BaseModel
 
 router = APIRouter(prefix="/rules", tags=["Business Rules"])
 
+class CreateRuleRequest(BaseModel):
+    business_id: int
+    category: str
+    visual_keywords: str
+    min_price: float
+    negotiation_instruction: str
+    is_active: bool = True
+
 @router.post("/", response_model=BusinessRule)
-def create_rule(rule: BusinessRule, session: Session = Depends(get_session)):
+def create_rule(rule_data: CreateRuleRequest, session: Session = Depends(get_session)):
     """Create a new business rule"""
+    # Verify business exists
+    business = session.get(Business, rule_data.business_id)
+    if not business:
+        raise HTTPException(status_code=404, detail="Business not found")
+    
+    rule = BusinessRule(**rule_data.dict())
     session.add(rule)
     session.commit()
     session.refresh(rule)
     return rule
 
-@router.get("/", response_model=List[BusinessRule])
-def get_rules(session: Session = Depends(get_session)):
-    """Get all business rules"""
-    return session.exec(select(BusinessRule)).all()
+@router.get("/business/{business_id}", response_model=List[BusinessRule])
+def get_rules(business_id: int, session: Session = Depends(get_session)):
+    """Get business rules for specific business"""
+    return session.exec(
+        select(BusinessRule).where(BusinessRule.business_id == business_id)
+    ).all()
 
 @router.get("/{rule_id}", response_model=BusinessRule)
 def get_rule(rule_id: int, session: Session = Depends(get_session)):
