@@ -1,44 +1,43 @@
 # MetaAI-hackathon
 
-# 🎯 Naira Sniper - Agentic Pricing System for Nigerian MSMEs
+# 🎯 Auto-Closer - Multimodal AI Sales Agent for WhatsApp Status
 
 ## The Problem
-Nigerian vendors lose millions daily because they:
-- Don't know market prices in real-time
-- Can't identify if customers are price-sensitive or quality-focused
-- Use rigid pricing that kills conversions
+Nigerian vendors lose sales because they:
+- Can't respond to WhatsApp status inquiries 24/7
+- Miss visual context from customer screenshots
+- Don't have automated lead qualification
+- Lack personalized sales conversations
 
 ## The Solution
 An AI agent that:
-1. **Monitors** competitor prices 24/7
-2. **Profiles** customers (price vs quality sensitive)
-3. **Decides** autonomously: drop price OR reinforce value
-4. **Retargets** ghosted customers via WhatsApp
+1. **Analyzes** WhatsApp status images with Vision AI
+2. **Responds** intelligently to customer inquiries
+3. **Qualifies** leads automatically
+4. **Closes** sales with personalized messaging
 
 ## 🏗️ Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    NAIRA SNIPER SYSTEM                      │
+│                    AUTO-CLOSER SYSTEM                       │
 ├─────────────────────────────────────────────────────────────┤
 │                                                             │
 │  ┌──────────────┐      ┌──────────────┐                   │
-│  │   SCRAPERS   │─────▶│  COMPETITOR  │                   │
-│  │ (Abdulrahman)│      │    PRICES    │                   │
+│  │   WHATSAPP   │─────▶│  STATUS      │                   │
+│  │   WEBHOOK    │      │  REPLIES     │                   │
 │  └──────────────┘      └──────┬───────┘                   │
 │                               │                            │
 │                               ▼                            │
 │  ┌──────────────┐      ┌──────────────┐                   │
-│  │   WHATSAPP   │◀─────│  PRICING     │◀──── Llama 3     │
-│  │   MESSAGES   │      │   AGENT      │      (Groq)       │
-│  │ (Abdulrahman)│      │  (Quadri)    │                   │
+│  │    REDIS     │◀─────│  VISION AI   │◀──── Llama 3.2   │
+│  │ DEDUPLICATION│      │    AGENT     │      11B Vision   │
 │  └──────────────┘      └──────┬───────┘                   │
-│         │                     │                            │
-│         ▼                     ▼                            │
+│                               │                            │
+│                               ▼                            │
 │  ┌──────────────┐      ┌──────────────┐                   │
-│  │   CUSTOMER   │      │  PYTORCH     │                   │
-│  │   PROFILER   │      │  PREDICTOR   │                   │
-│  │  (Quadri)    │      │  (Quadri)    │                   │
+│  │  BUSINESS    │      │   CUSTOMER   │                   │
+│  │   RULES      │      │   TAGGING    │                   │
 │  └──────────────┘      └──────────────┘                   │
 │                                                             │
 └─────────────────────────────────────────────────────────────┘
@@ -52,81 +51,62 @@ pip install -r requirements.txt
 
 # Configure environment
 cp .env.example .env
-# Add your GROQ_API_KEY
+# Add your GROQ_API_KEY and REDIS_URL
 
 # Run server
 python main.py
-
-# Test system (in another terminal)
-python test_system.py
 ```
 
 ## 📁 Project Structure
 
 ```
-naira-sniper/
-├── brain/              # 🧠 Quadri's Domain - AI Logic
-│   ├── core_logic.py   # Main pricing decision engine
-│   ├── llama_client.py # Groq/Llama 3 wrapper
-│   ├── profiler.py     # Customer type classifier
-│   ├── predictive.py   # PyTorch conversion predictor
-│   └── prompts.py      # AI prompts & templates
+auto-closer/
+├── brain/              # 🧠 AI Logic
+│   ├── llama_client.py # Groq/Llama 3.2 Vision wrapper
+│   └── sales_agent.py  # Auto-Closer AI agent
 │
-├── app/                # 🏗️ Quadri's Domain - Architecture
+├── app/                # 🏗️ Architecture
 │   ├── database.py     # SQLModel setup
-│   ├── models.py       # Database schema (7 tables)
+│   ├── models.py       # Database schema
 │   └── routers/        # FastAPI endpoints
-│       ├── products.py
-│       ├── market.py
-│       └── webhooks.py
-│
-├── engine/             # ⚙️ Abdulrahman's Domain
-│   ├── scrapers.py     # Jiji/Jumia/Instagram scrapers
-│   ├── whatsapp.py     # WhatsApp Business API
-│   ├── workers.py      # Celery background tasks
-│   └── ocr.py          # Instagram price extraction
+│       ├── rules.py    # Business rules CRUD
+│       └── webhooks.py # WhatsApp webhook handler
 │
 └── main.py             # FastAPI application entry
 ```
 
 ## 🎯 Key Features
 
-### ✅ Implemented (Quadri)
-- Dual-path AI reasoning (price drop vs value reinforcement)
-- Customer profiling with signal tracking
-- Llama 3 integration via Groq API
-- PyTorch conversion probability prediction
-- Floor price constraint enforcement
-- Complete audit trail
-- RESTful API with FastAPI
-
-### 🚧 In Progress (Abdulrahman)
-- Web scrapers (Jiji, Jumia)
-- WhatsApp Business integration
-- Celery task queue
-- Instagram OCR
+### ✅ Implemented
+- Vision AI with Llama 3.2 11B Vision model
+- WhatsApp Status reply detection
+- Redis-based message deduplication
+- Customer lead tagging and qualification
+- Business rules management API
+- Anti-spam protection
+- Admin commands via WhatsApp
 
 ## 📚 Documentation
 
-- [Quadri's Architecture Guide](QUADRI_README.md) - Detailed technical docs
 - API Docs: `http://localhost:8000/docs` (when server running)
+- Business Rules: `POST /rules/` to configure categories and pricing
 
 ## 🤝 Team
 
 **Quadri** - Systems Architect & AI Engineer  
-Built: Brain (AI logic), Database, API skeleton
+Built: Vision AI, Sales Agent, Database, API
 
-**Abdulrahman** - DevOps & Integration Engineer  
-Building: Scrapers, WhatsApp, Task Queue, OCR
+**Abdulrahman** - Integration Engineer  
+Built: WhatsApp Integration, Redis Setup
 
 ## 📊 Example Flow
 
-1. Customer: "How much last? I see am for 14,500 on Jiji"
-2. System classifies: **Price-Sensitive**
-3. AI checks: Market avg = ₦14,000, Floor = ₦13,000
-4. Decision: **Price Drop** to ₦13,900
-5. WhatsApp: "Market price dropped! Now ₦13,900 for 4 hours"
-6. Conversion probability: **78%**
+1. Customer replies to WhatsApp status with product image
+2. Vision AI analyzes image context and customer message
+3. System tags customer as qualified lead
+4. AI generates personalized sales response
+5. WhatsApp sends automated follow-up
+6. Lead tracked in database for conversion
 
 ---
 
