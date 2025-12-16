@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlmodel import Session, select
 from app.database import get_session
-from app.models import Customer, SalesLog, Product, BusinessConfig
+from app.models import Customer, BusinessConfig
 from brain.sales_agent import SalesAgent
 from brain.profiler import CustomerProfiler
 from engine.notifications import NotificationManager
@@ -331,17 +331,26 @@ async def _handle_message_event(session: Session, data: Dict):
         return {"status": "manual_takeover", "reason": "Owner manually replying"}
     
     elif not from_me:
-        # Customer message - Trigger Sales Agent
+        # Customer message - Check if it's a status reply
         print(f"👥 CUSTOMER MESSAGE detected: '{text}'")
         if not business_config.bot_active:
             print(f"🚫 Bot is inactive")
             return {"status": "ignored", "reason": "Bot is inactive"}
         
-        # 1. FETCH HISTORY (Last 10 messages)
+        # Check for status reply
+        context = msg.get("extendedTextMessage", {}).get("contextInfo", {})
+        is_status_reply = "status@broadcast" in context.get("remoteJid", "")
+        has_quoted_image = "imageMessage" in context.get("quotedMessage", {})
+        
+        if is_status_reply and has_quoted_image:
+            print(f"📸 STATUS REPLY detected with image")
+            return await _handle_status_reply(session, phone, text, context, push_name)
+        
+        # Regular customer message
         history_key = f"history:{phone}"
         try:
             raw_history = redis_client.lrange(history_key, 0, 9)
-            conversation_history = [json.loads(msg) for msg in raw_history][::-1] # Reverse to chronological
+            conversation_history = [json.loads(msg) for msg in raw_history][::-1]
         except Exception as e:
             print(f"⚠️ Redis history fetch failed: {e}")
             conversation_history = []
@@ -547,6 +556,53 @@ async def _handle_customer_message(session: Session, phone: str, text: str, cust
         
     except Exception as e:
         print(f"Error handling customer message: {e}")
+        return {"status": "error", "message": str(e)}
+
+async def _handle_status_reply(session: Session, phone: str, text: str, context: Dict, customer_name: str):
+    """Handle WhatsApp status reply with Vision AI"""
+    try:
+        # Extract image data from quoted message
+        quoted_msg = context.get("quotedMessage", {})
+        image_msg = quoted_msg.get("imageMessage", {})
+        
+        # Try to get image URL or use thumbnail
+        image_url = image_msg.get("url") or image_msg.get("jpegThumbnail")
+        
+        if not image_url:
+            # Fallback response
+            whatsapp_client = EvolutionClient()
+            fallback_msg = "I can't see the image clearly. What caught your eye?"
+            whatsapp_client.send_message(phone, fallback_msg)
+            return {"status": "fallback", "reason": "No image data"}
+        
+        # Process with Sales Agent
+        sales_agent = SalesAgent()
+        result = sales_agent.process_status_reply(
+            session=session,
+            customer_phone=phone,
+            image_url=image_url,
+            user_text=text,
+            customer_name=customer_name
+        )
+        
+        # Send AI response
+        if result.get("reply"):
+            whatsapp_client = EvolutionClient()
+            import time
+            import random
+            time.sleep(random.uniform(15, 45))  # Status reply delay
+            whatsapp_client.send_message(phone, result["reply"])
+        
+        return {
+            "status": "status_reply_processed",
+            "customer_phone": phone,
+            "detected_category": result.get("detected_category"),
+            "confidence": result.get("confidence"),
+            "is_sales_lead": result.get("is_sales_lead")
+        }
+        
+    except Exception as e:
+        print(f"Error handling status reply: {e}")
         return {"status": "error", "message": str(e)}
 
 @router.post("/test/message")

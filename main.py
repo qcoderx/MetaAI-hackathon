@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from app.database import create_db_and_tables, get_session
-from app.routers import products, market, webhooks
+from app.routers import webhooks, rules
 from app.models import BusinessConfig
 from sqlmodel import select
 from contextlib import asynccontextmanager
@@ -33,30 +33,29 @@ async def lifespan(app: FastAPI):
     # Shutdown: cleanup if needed
 
 app = FastAPI(
-    title="Naira Sniper - WhatsApp AI Sales Assistant",
-    description="Full-lifecycle AI sales assistant for Nigerian MSMEs with conversational commerce, order management, and market intelligence",
-    version="2.0.0",
+    title="Auto-Closer - Multimodal AI Sales Agent",
+    description="Vision AI-powered sales automation for WhatsApp Status replies with Nigerian business context",
+    version="3.0.0",
     lifespan=lifespan
 )
 
 # Include routers
-app.include_router(products.router)
-app.include_router(market.router)
 app.include_router(webhooks.router)
+app.include_router(rules.router)
 
 @app.get("/")
 def root():
     return {
-        "message": "Naira Sniper - WhatsApp AI Sales Assistant",
+        "message": "Auto-Closer - Multimodal AI Sales Agent",
         "status": "active",
-        "version": "2.0.0",
+        "version": "3.0.0",
         "features": [
-            "Conversational AI Sales Agent",
-            "Automated Order Processing",
-            "Real-time Market Intelligence",
-            "Owner Notifications (WhatsApp + Push)",
-            "Daily Analytics Reports",
-            "Customer Retargeting"
+            "Vision AI Status Reply Processing",
+            "Llama 3.2 11B Vision Integration",
+            "Dynamic Business Rules Engine",
+            "Nigerian Business Context AI",
+            "Automated Lead Qualification",
+            "Customer Interest Tagging"
         ],
         "endpoints": {
             "products": "/product",
