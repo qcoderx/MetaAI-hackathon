@@ -5,6 +5,7 @@ from brain.llama_client import LlamaClient
 from datetime import datetime
 import httpx
 import os
+import asyncio
 
 class SalesAgent:
     def __init__(self):
@@ -64,8 +65,13 @@ class SalesAgent:
             if not rules_context:
                 rules_context = "No specific rules configured. Respond helpfully to customer inquiries."
             
-            # Analyze image with Vision AI
-            analysis = await self.llama_client.analyze_image_context(image_url, user_message, rules_context)
+            # Analyze image with Vision AI (sync call in thread)
+            loop = asyncio.get_event_loop()
+            analysis = await loop.run_in_executor(
+                None, 
+                self.llama_client.analyze_image_context, 
+                image_url, user_message, rules_context
+            )
             
             # Save status reply
             status_reply = StatusReply(

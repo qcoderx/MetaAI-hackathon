@@ -1,4 +1,3 @@
-from groq import AsyncGroq
 import os
 import json
 from dotenv import load_dotenv
@@ -12,11 +11,16 @@ class LlamaClient:
             print("Warning: GROQ_API_KEY not found")
             self.client = None
         else:
-            self.client = AsyncGroq(api_key=api_key)
+            try:
+                from groq import Groq
+                self.client = Groq(api_key=api_key)
+            except ImportError:
+                print("Groq library not available")
+                self.client = None
         self.vision_model = "llama-3.2-11b-vision-preview"
         self.text_model = "llama-3.3-70b-versatile"
     
-    async def analyze_image_context(self, image_url: str, user_text: str, rules_context: str) -> dict:
+    def analyze_image_context(self, image_url: str, user_text: str, rules_context: str) -> dict:
         """Analyze WhatsApp status image with Vision AI"""
         if not self.client:
             return {"detected_category": "unknown", "confidence": 0.0, "reply": "System unavailable", "is_sales_lead": False}
@@ -32,7 +36,7 @@ Formulate a short, friendly, Nigerian-business style reply based on the Rule's '
 OUTPUT JSON ONLY: {{ 'detected_category': 'string', 'confidence': float, 'reply': 'string (the actual message to send)', 'is_sales_lead': bool }}"""
         
         try:
-            chat_completion = await self.client.chat.completions.create(
+            chat_completion = self.client.chat.completions.create(
                 messages=[
                     {
                         "role": "user",

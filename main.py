@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from app.database import create_db_and_tables
-from app.routers import webhooks, rules, onboarding
+from app.routers import webhooks, rules, onboarding, qr
 from contextlib import asynccontextmanager
 
 @asynccontextmanager
@@ -27,6 +27,7 @@ app = FastAPI(
 app.include_router(webhooks.router)
 app.include_router(rules.router)
 app.include_router(onboarding.router)
+app.include_router(qr.router)
 
 @app.get("/")
 async def root():
