@@ -7,7 +7,6 @@ import httpx
 import os
 import secrets
 import string
-import base64
 
 router = APIRouter(prefix="/onboarding", tags=["Onboarding"])
 
@@ -31,63 +30,59 @@ async def create_instance(
     request: CreateInstanceRequest,
     session: Session = Depends(get_session)
 ):
-    # 1. Check DB for existing user
+    # Check for existing user
     existing = session.exec(select(Business).where(Business.phone_number == request.phone_number)).first()
     if existing:
         raise HTTPException(status_code=400, detail="Phone number already registered")
 
-    # 2. Setup names
     instance_name = generate_instance_name(request.business_name)
     
-    # 3. WAHA Configuration
-    waha_url = "http://localhost:3000" 
-    waha_api_key = "auto-closer-key"
-    webhook_url = f"{os.getenv('BASE_URL')}/webhooks/whatsapp/{instance_name}"
+    # WPPConnect Configuration
+    wpp_url = os.getenv("WPPCONNECT_URL")
+    secret_key = os.getenv("WPPCONNECT_SECRET_KEY")
+    
+    if not wpp_url or not secret_key:
+        raise HTTPException(status_code=500, detail="Configuration Error: WPPCONNECT_URL or WPPCONNECT_SECRET_KEY missing")
+
+    base_url = os.getenv('BASE_URL', 'http://localhost:8000')
+    webhook_url = f"{base_url}/webhooks/wppconnect"
 
     try:
         async with httpx.AsyncClient() as client:
-            # STEP A: Start the Session
+            # 1. Generate Token (Admin Level)
+            token_url = f"{wpp_url}/api/{instance_name}/{secret_key}/generate-token"
+            token_res = await client.post(token_url)
+            
+            if token_res.status_code != 200:
+                raise HTTPException(status_code=500, detail=f"Token generation failed: {token_res.text}")
+            
+            session_token = token_res.json().get('token')
+            if not session_token:
+                raise HTTPException(status_code=500, detail="No token received from WPPConnect")
+
+            # 2. Start Session (User Level)
+            start_url = f"{wpp_url}/api/{instance_name}/start-session"
+            headers = {"Authorization": f"Bearer {session_token}"}
             payload = {
-                "name": instance_name,
-                "config": {
-                    "webhooks": [
-                        {
-                            "url": webhook_url,
-                            "events": ["message", "session.status"]
-                        }
-                    ]
-                }
+                "webhook": webhook_url,
+                "waitQrCode": True
             }
             
-            print(f"Starting WAHA session: {instance_name}")
-            response = await client.post(
-                f"{waha_url}/api/sessions", 
-                json=payload,
-                headers={"Authorization": f"Bearer {waha_api_key}"}
-            )
+            print(f"🚀 Starting WPPConnect session: {instance_name} at {wpp_url}")
             
-            if response.status_code not in [200, 201]:
-                print(f"WAHA Error: {response.text}")
-                raise HTTPException(status_code=500, detail=f"WAHA Failed: {response.text}")
-
-            # STEP B: Get the QR Code
-            qr_response = await client.get(
-                f"{waha_url}/api/sessions/{instance_name}/auth/qr?format=image",
-                headers={"Authorization": f"Bearer {waha_api_key}"}
-            )
+            start_res = await client.post(start_url, json=payload, headers=headers)
             
-            qr_base64 = ""
-            if qr_response.status_code == 200:
-                qr_base64 = base64.b64encode(qr_response.content).decode('utf-8')
-            else:
-                print("QR not ready yet, user might need to check dashboard")
+            if start_res.status_code != 200:
+                raise HTTPException(status_code=500, detail=f"Session start failed: {start_res.text}")
+            
+            qr_code = start_res.json().get('qrcode', '')
 
-            # 4. Save to DB
+            # Save to DB with Bearer Token
             business = Business(
                 business_name=request.business_name,
                 phone_number=request.phone_number,
                 instance_name=instance_name,
-                api_key="waha-managed"
+                api_key=session_token  # Store Bearer Token
             )
             session.add(business)
             session.commit()
@@ -95,24 +90,11 @@ async def create_instance(
             return CreateInstanceResponse(
                 business_id=business.id,
                 instance_name=instance_name,
-                qr_code=qr_base64,
+                qr_code=qr_code,
                 webhook_url=webhook_url
             )
 
+    except httpx.ConnectError:
+         raise HTTPException(status_code=503, detail=f"Could not connect to WPPConnect at {wpp_url}. Is the Docker container running?")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Connection Failed: {str(e)}")
-
-@router.get("/instances")
-async def list_instances(session: Session = Depends(get_session)):
-    """List all business instances"""
-    businesses = session.exec(select(Business)).all()
-    return [
-        {
-            "business_id": b.id,
-            "business_name": b.business_name,
-            "phone_number": b.phone_number,
-            "instance_name": b.instance_name,
-            "created_at": b.created_at
-        }
-        for b in businesses
-    ]
+        raise HTTPException(status_code=500, detail=f"System Error: {str(e)}")

@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Dict, Any
 import redis
 
-from fastapi import APIRouter, Request, HTTPException, Path
+from fastapi import APIRouter, Request, HTTPException
 from sqlmodel import Session, select
 
 from app.database import engine
@@ -25,12 +25,23 @@ except:
     print("Redis not available - using memory deduplication")
     message_history = {}
 
-@router.post("/whatsapp/{instance_name}")
-async def whatsapp_webhook(request: Request, instance_name: str = Path(...)):
-    """Handle WhatsApp webhook events from Evolution API for specific instance"""
+@router.post("/wppconnect")
+async def wppconnect_webhook(request: Request):
+    """Handle WPPConnect webhook events"""
     try:
         data = await request.json()
-        print(f"Webhook received for {instance_name}: {json.dumps(data, indent=2)}")
+        print(f"WPPConnect webhook received: {json.dumps(data, indent=2)}")
+        
+        # Filter: Only process event == "onMessage"
+        if data.get("event") != "onMessage":
+            return {"status": "ignored", "reason": "Not onMessage event"}
+        
+        # Extract session and message
+        instance_name = data.get("session")
+        msg = data.get("response", {})
+        
+        if not instance_name:
+            return {"status": "ignored", "reason": "No session in payload"}
         
         # Get business by instance_name
         with Session(engine) as session:
@@ -39,71 +50,49 @@ async def whatsapp_webhook(request: Request, instance_name: str = Path(...)):
             ).first()
             
             if not business:
-                raise HTTPException(status_code=404, detail=f"Business with instance {instance_name} not found")
+                print(f"Business with instance {instance_name} not found")
+                return {"status": "ignored", "reason": "Business not found"}
         
-        # Handle Evolution API message format
-        if "data" in data:
-            await _handle_message_event(data["data"], business.id, business.instance_name)
+        # Deduplication check
+        msg_id = msg.get("id", "")
+        if msg_id:
+            if redis_client:
+                if redis_client.get(f"msg:{msg_id}"):
+                    return {"status": "ignored", "reason": "Duplicate message"}
+                redis_client.setex(f"msg:{msg_id}", 3600, "1")
+            else:
+                if msg_id in message_history:
+                    return {"status": "ignored", "reason": "Duplicate message"}
+                message_history[msg_id] = datetime.now()
+        
+        # Detect Status Reply
+        quoted = msg.get("quotedMsg", {})
+        if "status@broadcast" in (quoted.get("from") or ""):
+            print(f"🎯 Status Reply on {instance_name}: {msg.get('body')}")
+            
+            # Extract details for processing
+            customer_phone = msg.get("from", "").replace("@c.us", "")
+            user_message = msg.get("body", "")
+            
+            # Extract image from quoted status
+            image_url = ""
+            if quoted.get("type") == "image":
+                image_url = quoted.get("body", "")  # WPPConnect provides image URL in body
+            
+            if image_url and user_message:
+                # Process status reply with Vision AI
+                response = await sales_agent.process_status_reply(
+                    business.id, instance_name, customer_phone, image_url, user_message
+                )
+                print(f"AI Response: {response}")
+            else:
+                print(f"Status reply missing data - URL: {bool(image_url)}, Text: {bool(user_message)}")
         
         return {"status": "success"}
         
-    except HTTPException:
-        raise
     except Exception as e:
         print(f"Webhook error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
-
-async def _handle_message_event(message_data: Dict[str, Any], business_id: int, instance_name: str):
-    """Process incoming WhatsApp messages for specific business"""
-    try:
-        # Extract message details
-        key = message_data.get("key", {})
-        from_number = key.get("remoteJid", "").replace("@s.whatsapp.net", "")
-        msg_id = key.get("id", "")
-        
-        # Deduplication check
-        if redis_client:
-            if redis_client.get(f"msg:{msg_id}"):
-                return
-            redis_client.setex(f"msg:{msg_id}", 3600, "1")  # 1 hour TTL
-        else:
-            if msg_id in message_history:
-                return
-            message_history[msg_id] = datetime.now()
-        
-        # Check if this is a status reply
-        msg = message_data.get("message", {})
-        context = msg.get("extendedTextMessage", {}).get("contextInfo", {})
-        is_status_reply = "status@broadcast" in context.get("remoteJid", "")
-        has_quoted_image = "imageMessage" in context.get("quotedMessage", {})
-        
-        if is_status_reply and has_quoted_image:
-            # Extract user message
-            user_text = msg.get("extendedTextMessage", {}).get("text", "")
-            if not user_text:
-                user_text = msg.get("conversation", "")
-            
-            # Extract image URL from quoted message
-            quoted_image = context.get("quotedMessage", {}).get("imageMessage", {})
-            image_url = quoted_image.get("url", "")
-            
-            # Fallback to thumbnail if no URL
-            if not image_url and "jpegThumbnail" in quoted_image:
-                thumbnail_b64 = quoted_image["jpegThumbnail"]
-                image_url = f"data:image/jpeg;base64,{thumbnail_b64}"
-            
-            if image_url and user_text:
-                # Process status reply with Vision AI
-                response = await sales_agent.process_status_reply(
-                    business_id, instance_name, from_number, image_url, user_text
-                )
-                print(f"Status reply from {from_number}: {user_text}")
-                print(f"AI Response: {response}")
-            else:
-                print(f"Status reply missing data - URL: {bool(image_url)}, Text: {bool(user_text)}")
-        
-    except Exception as e:
-        print(f"Error handling message event: {e}")
 
 @router.get("/health")
 async def health_check():

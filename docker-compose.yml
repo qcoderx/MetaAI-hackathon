@@ -1,0 +1,23 @@
+services:
+  # Your FastAPI App
+  auto-closer:
+    build: .
+    ports:
+      - "8000:8000"
+    env_file: .env
+    depends_on:
+      - wppconnect
+
+  # WPPConnect Server
+  wppconnect:
+    image: wppconnect/wppconnect-server:latest
+    restart: always
+    ports:
+      - "21465:21465"
+    environment:
+      - SECRET_KEY=mysecretkey123
+      - PORT=21465
+      - WEBHOOK_URL=http://auto-closer:8000/webhooks/wppconnect
+      - AUTO_DOWNLOAD=true
+    volumes:
+      - ./wppconnect-sessions:/userDataDir
