@@ -9,28 +9,20 @@ services:
     env_file: .env
     depends_on:
       - wppconnect
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
-  # The WPPConnect Server
+  # The Fix: Build directly from the Official Repo
   wppconnect:
-    # 👇 CRITICAL CHANGE: Build from the folder you just cloned
-    build: ./wppconnect-server 
-    
+    build: https://github.com/wppconnect-team/wppconnect-server.git
     restart: always
     ports:
       - "21465:21465"
     environment:
-      # Security Keys
-      - SECRET_KEY=mysecretkey123
-      
-      # Webhook (Where to send messages)
-      # On your laptop, use 'host.docker.internal' to reach your Python app
-      - WEBHOOK_URL=http://host.docker.internal:8000/webhooks/wppconnect
-      
-      # Essential Settings
       - PORT=21465
-      - AUTO_DOWNLOAD=true  # Needed for your Vision AI to see images
-      - LOG_LEVEL=warn      # Keeps the logs clean
+      - SECRET_KEY=THISISMYSECURETOKEN
+      - WEBHOOK_URL=http://host.docker.internal:8000/webhooks/wppconnect
+      - AUTO_DOWNLOAD=true
+      - BROWSER_ARGS=--no-sandbox --disable-setuid-sandbox --disable-dev-shm-usage
     volumes:
-      # Persistence (Save login sessions)
-      - ./wpp_sessions:/userDataDir
-      - ./wpp_tokens:/usr/src/wpp-server/tokens
+      - ./wppconnect-sessions:/userDataDir
