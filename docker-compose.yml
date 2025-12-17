@@ -1,5 +1,7 @@
+version: '3.8'
+
 services:
-  # Your FastAPI App
+  # Your Python App
   auto-closer:
     build: .
     ports:
@@ -8,16 +10,27 @@ services:
     depends_on:
       - wppconnect
 
-  # WPPConnect Server
+  # The WPPConnect Server
   wppconnect:
-    image: wppconnect/wppconnect-server:latest
+    # 👇 CRITICAL CHANGE: Build from the folder you just cloned
+    build: ./wppconnect-server 
+    
     restart: always
     ports:
       - "21465:21465"
     environment:
+      # Security Keys
       - SECRET_KEY=mysecretkey123
+      
+      # Webhook (Where to send messages)
+      # On your laptop, use 'host.docker.internal' to reach your Python app
+      - WEBHOOK_URL=http://host.docker.internal:8000/webhooks/wppconnect
+      
+      # Essential Settings
       - PORT=21465
-      - WEBHOOK_URL=http://auto-closer:8000/webhooks/wppconnect
-      - AUTO_DOWNLOAD=true
+      - AUTO_DOWNLOAD=true  # Needed for your Vision AI to see images
+      - LOG_LEVEL=warn      # Keeps the logs clean
     volumes:
-      - ./wppconnect-sessions:/userDataDir
+      # Persistence (Save login sessions)
+      - ./wpp_sessions:/userDataDir
+      - ./wpp_tokens:/usr/src/wpp-server/tokens
